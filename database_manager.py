@@ -38,6 +38,7 @@ class DatabaseManager:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     quotation_id TEXT UNIQUE,
                     customer_name TEXT,
+                    customer_address TEXT,
                     quotation_date DATE,
                     total_amount REAL,
                     discount_total REAL,
@@ -256,7 +257,7 @@ class DatabaseManager:
             return df[column].dropna().unique().tolist()
         return []
     
-    def save_quotation(self, quotation_id: str, customer_name: str, items: list, total_amount: float, discount_total: float, final_amount: float) -> Tuple[bool, str]:
+    def save_quotation(self, quotation_id: str, customer_name: str, customer_address: str, items: list, total_amount: float, discount_total: float, final_amount: float) -> Tuple[bool, str]:
         """Save a quotation to the database."""
         try:
             conn = self._get_connection()
@@ -265,9 +266,9 @@ class DatabaseManager:
             # Insert quotation header
             cursor.execute('''
                 INSERT INTO generated_quotations 
-                (quotation_id, customer_name, quotation_date, total_amount, discount_total, final_amount)
-                VALUES (?, ?, DATE('now'), ?, ?, ?)
-            ''', (quotation_id, customer_name, total_amount, discount_total, final_amount))
+                (quotation_id, customer_name, customer_address, quotation_date, total_amount, discount_total, final_amount)
+                VALUES (?, ?, ?, DATE('now'), ?, ?, ?)
+            ''', (quotation_id, customer_name, customer_address, total_amount, discount_total, final_amount))
             
             # Insert quotation items
             for item in items:
@@ -293,7 +294,7 @@ class DatabaseManager:
         try:
             conn = self._get_connection()
             df = pd.read_sql_query('''
-                SELECT quotation_id, customer_name, quotation_date, 
+                SELECT quotation_id, customer_name, customer_address, quotation_date, 
                        total_amount, discount_total, final_amount, created_at
                 FROM generated_quotations 
                 ORDER BY created_at DESC

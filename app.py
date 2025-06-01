@@ -659,7 +659,13 @@ def main():
         
         # Customer Information
         st.subheader("Customer Information")
-        customer_name = st.text_input("Customer Name", placeholder="Enter customer name")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            customer_name = st.text_input("Customer Name", placeholder="Enter customer name")
+        
+        with col2:
+            customer_address = st.text_area("Customer Address", placeholder="Enter customer address", height=100)
         
         # Product Search and Selection
         st.subheader("Add Products to Quotation")
@@ -756,6 +762,7 @@ def main():
                 success, message = db.save_quotation(
                     quotation_id=quotation_id,
                     customer_name=customer_name,
+                    customer_address=customer_address,
                     items=st.session_state.quotation_items,
                     total_amount=total_amount,
                     discount_total=0,
