@@ -174,19 +174,23 @@ def admin_panel():
             st.info("No users found.")
     
     with admin_tab3:
-        st.subheader("Change Your Password")
+        st.subheader("Password Management")
         
-        with st.form("change_password_form"):
+        # Admin's own password change
+        st.write("### Change Your Password")
+        with st.form("change_own_password_form"):
             current_password = st.text_input("Current Password", type="password")
             new_password = st.text_input("New Password", type="password", placeholder="Enter new password (min 6 characters)")
             confirm_password = st.text_input("Confirm New Password", type="password")
             
-            change_submitted = st.form_submit_button("🔑 Change Password", type="primary")
+            change_submitted = st.form_submit_button("🔑 Change My Password", type="primary")
             
             if change_submitted:
                 if current_password and new_password and confirm_password:
                     if new_password != confirm_password:
                         st.error("New passwords do not match.")
+                    elif len(new_password) < 6:
+                        st.error("Password must be at least 6 characters long.")
                     else:
                         success, message = auth.change_password(
                             st.session_state.user_info['username'],
@@ -200,6 +204,51 @@ def admin_panel():
                             st.error(message)
                 else:
                     st.error("Please fill in all fields.")
+        
+        st.divider()
+        
+        # Reset other users' passwords
+        st.write("### Reset User Passwords")
+        st.info("As an admin, you can reset passwords for other users. They will be notified to change their password on next login.")
+        
+        users = auth.get_all_users()
+        other_users = [user for user in users if user['username'] != st.session_state.user_info['username']]
+        
+        if other_users:
+            with st.form("reset_user_password_form"):
+                user_options = [f"{user['username']} ({user['role']})" for user in other_users]
+                selected_user_option = st.selectbox("Select User", user_options)
+                new_user_password = st.text_input("New Password", type="password", placeholder="Enter new password (min 6 characters)")
+                confirm_user_password = st.text_input("Confirm New Password", type="password")
+                
+                reset_submitted = st.form_submit_button("🔑 Reset User Password", type="secondary")
+                
+                if reset_submitted:
+                    if selected_user_option and new_user_password and confirm_user_password:
+                        if new_user_password != confirm_user_password:
+                            st.error("New passwords do not match.")
+                        elif len(new_user_password) < 6:
+                            st.error("Password must be at least 6 characters long.")
+                        else:
+                            # Extract username from selection
+                            selected_username = selected_user_option.split(' (')[0]
+                            
+                            # For password reset by admin, we'll use a special method
+                            # Since admin doesn't know the old password, we need to add this functionality
+                            success, message = auth.admin_reset_password(
+                                selected_username,
+                                new_user_password,
+                                st.session_state.user_info['username']
+                            )
+                            
+                            if success:
+                                st.success(f"Password reset successfully for user: {selected_username}")
+                            else:
+                                st.error(message)
+                    else:
+                        st.error("Please fill in all fields.")
+        else:
+            st.info("No other users to manage.")
 
 def main():
     st.set_page_config(

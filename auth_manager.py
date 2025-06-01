@@ -405,3 +405,47 @@ class AuthManager:
             
         except Exception as e:
             return False, f"Error changing password: {str(e)}"
+    
+    def admin_reset_password(self, username: str, new_password: str, admin_username: str) -> Tuple[bool, str]:
+        """Reset user password (admin only - doesn't require old password)."""
+        try:
+            # Validate password length
+            if len(new_password) < 6:
+                return False, "Password must be at least 6 characters long"
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Verify admin permissions
+            cursor.execute("SELECT role FROM users WHERE username = ?", (admin_username,))
+            admin_result = cursor.fetchone()
+            
+            if not admin_result or admin_result[0] != 'admin':
+                conn.close()
+                return False, "Insufficient permissions - admin access required"
+            
+            # Check if target user exists
+            cursor.execute("SELECT username FROM users WHERE username = ?", (username,))
+            user_result = cursor.fetchone()
+            
+            if not user_result:
+                conn.close()
+                return False, f"User '{username}' not found"
+            
+            # Generate new salt and hash
+            new_salt = secrets.token_hex(16)
+            new_hash = self._hash_password(new_password, new_salt)
+            
+            # Update password
+            cursor.execute(
+                "UPDATE users SET password_hash = ?, salt = ? WHERE username = ?",
+                (new_hash, new_salt, username)
+            )
+            
+            conn.commit()
+            conn.close()
+            
+            return True, f"Password reset successfully for user '{username}'"
+            
+        except Exception as e:
+            return False, f"Error resetting password: {str(e)}"
