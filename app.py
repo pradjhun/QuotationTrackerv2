@@ -343,17 +343,38 @@ def main():
             all_products = db.get_all_data()
             
             if not all_products.empty:
-                st.subheader("Select Product to Edit")
+                st.subheader("Search and Select Product to Edit")
                 
-                # Create a product selector
-                product_options = []
-                for idx, row in all_products.iterrows():
-                    model = row.get('MODEL', 'Unknown')
-                    color = row.get('BODY CLOLOR', 'Unknown')
-                    price = row.get('PRICE', 'Unknown')
-                    product_options.append(f"{model} - {color} (₹{price})")
+                # Search bar for filtering products
+                search_filter = st.text_input(
+                    "Search products by model, color, or price", 
+                    placeholder="Type to filter products...",
+                    key="edit_search"
+                )
                 
-                selected_product_str = st.selectbox("Select product to edit:", product_options)
+                # Filter products based on search
+                filtered_products = all_products
+                if search_filter:
+                    search_lower = search_filter.lower()
+                    filtered_products = all_products[
+                        all_products['MODEL'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                        all_products['BODY CLOLOR'].astype(str).str.lower().str.contains(search_lower, na=False) |
+                        all_products['PRICE'].astype(str).str.contains(search_lower, na=False)
+                    ]
+                
+                if not filtered_products.empty:
+                    # Create a product selector from filtered results
+                    product_options = []
+                    for idx, row in filtered_products.iterrows():
+                        model = row.get('MODEL', 'Unknown')
+                        color = row.get('BODY CLOLOR', 'Unknown')
+                        price = row.get('PRICE', 'Unknown')
+                        product_options.append(f"{model} - {color} (₹{price})")
+                    
+                    selected_product_str = st.selectbox("Select product to edit:", product_options)
+                else:
+                    st.info("No products found matching your search criteria.")
+                    selected_product_str = None
                 
                 if selected_product_str:
                     # Find the selected product
@@ -361,13 +382,28 @@ def main():
                     selected_product = None
                     selected_index = None
                     
-                    for idx, row in all_products.iterrows():
+                    for idx, row in filtered_products.iterrows():
                         if row.get('MODEL', '') == selected_model:
                             selected_product = row
                             selected_index = idx
                             break
                     
                     if selected_product is not None:
+                        # Display current product image if exists
+                        current_picture = str(selected_product.get('PICTURE', ''))
+                        if current_picture and current_picture != 'nan' and current_picture != '':
+                            import os
+                            image_path = os.path.join("uploaded_images", current_picture)
+                            if os.path.exists(image_path):
+                                st.subheader("Current Product Image")
+                                col1, col2, col3 = st.columns([1, 2, 1])
+                                with col2:
+                                    st.image(image_path, caption=f"Current image: {current_picture}", width=300)
+                            else:
+                                st.info(f"Image file not found: {current_picture}")
+                        else:
+                            st.info("No image associated with this product")
+                        
                         with st.form("edit_product_form"):
                             col1, col2 = st.columns(2)
                             
