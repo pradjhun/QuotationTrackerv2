@@ -228,7 +228,7 @@ def main():
                 st.warning("Click again to confirm deletion")
     
     # Main content area with tabs
-    tab1, tab2, tab3 = st.tabs(["🔍 Browse Products", "📋 Create Quotation", "📄 View Quotations"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🔍 Browse Products", "📋 Create Quotation", "📄 View Quotations", "📥 Download Quotations"])
     
     with tab1:
         st.header("🔍 Search & Filter Products")
@@ -601,6 +601,171 @@ def main():
                                 st.divider()
         else:
             st.info("No quotations found. Create your first quotation in the 'Create Quotation' tab.")
+    
+    with tab4:
+        st.header("📥 Download Quotations")
+        
+        quotations = db.get_quotations()
+        
+        if not quotations.empty:
+            # Select quotation to download
+            selected_quotation = st.selectbox(
+                "Select quotation to download:",
+                options=quotations['quotation_id'].tolist(),
+                format_func=lambda x: f"{x} - {quotations[quotations['quotation_id']==x]['customer_name'].iloc[0]} - {quotations[quotations['quotation_id']==x]['quotation_date'].iloc[0]}"
+            )
+            
+            if selected_quotation:
+                quotation_details = quotations[quotations['quotation_id'] == selected_quotation].iloc[0]
+                quotation_items = db.get_quotation_items(selected_quotation)
+                
+                # Create formatted quotation
+                if st.button("📄 Generate Quotation Document", type="primary"):
+                    # Create formatted Excel quotation
+                    from io import BytesIO
+                    import pandas as pd
+                    
+                    # Prepare the quotation data
+                    quotation_data = []
+                    
+                    for idx, item in quotation_items.iterrows():
+                        original_price = item['price']
+                        discount_amount = original_price * (item['discount'] / 100)
+                        unit_price_after_discount = original_price - discount_amount
+                        final_price = unit_price_after_discount * item['quantity']
+                        
+                        quotation_data.append({
+                            'Sr. No.': idx + 1,
+                            'Model': item['model'],
+                            'Body Color': item['body_color'],
+                            'Light Color': item['light_color'],
+                            'Size': item.get('size', 'N/A'),
+                            'Watt': item.get('watt', 'N/A'),
+                            'Beam Angle': item.get('beam_angle', 'N/A'),
+                            'Cut Out': item.get('cut_out', 'N/A'),
+                            'Quantity': item['quantity'],
+                            'Unit Price (After Discount)': f"₹{unit_price_after_discount:,.2f}",
+                            'Final Price': f"₹{final_price:,.2f}"
+                        })
+                    
+                    # Create DataFrame
+                    quotation_df = pd.DataFrame(quotation_data)
+                    
+                    # Create Excel file in memory
+                    output = BytesIO()
+                    
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        # Create header information
+                        header_data = {
+                            'Field': ['QUOTATION', '', 'Customer Name:', 'Quotation ID:', 'Date:', ''],
+                            'Value': ['', '', quotation_details['customer_name'], 
+                                    quotation_details['quotation_id'], 
+                                    quotation_details['quotation_date'], '']
+                        }
+                        header_df = pd.DataFrame(header_data)
+                        
+                        # Write header
+                        header_df.to_excel(writer, sheet_name='Quotation', index=False, header=False, startrow=0)
+                        
+                        # Write quotation items
+                        quotation_df.to_excel(writer, sheet_name='Quotation', index=False, startrow=7)
+                        
+                        # Write totals
+                        total_row = len(quotation_df) + 9
+                        totals_data = {
+                            'Field': ['', '', '', '', '', '', '', '', 'TOTAL:', f"₹{quotation_details['final_amount']:,.2f}"],
+                        }
+                        totals_df = pd.DataFrame([totals_data['Field']])
+                        totals_df.to_excel(writer, sheet_name='Quotation', index=False, header=False, startrow=total_row)
+                        
+                        # Format the worksheet
+                        worksheet = writer.sheets['Quotation']
+                        
+                        # Format header
+                        worksheet['A1'] = 'QUOTATION'
+                        worksheet['A3'] = 'Customer Name:'
+                        worksheet['B3'] = quotation_details['customer_name']
+                        worksheet['A4'] = 'Quotation ID:'
+                        worksheet['B4'] = quotation_details['quotation_id']
+                        worksheet['A5'] = 'Date:'
+                        worksheet['B5'] = quotation_details['quotation_date']
+                        
+                        # Format totals
+                        total_cell = f'I{total_row + 1}'
+                        amount_cell = f'J{total_row + 1}'
+                        worksheet[total_cell] = 'TOTAL:'
+                        worksheet[amount_cell] = f"₹{quotation_details['final_amount']:,.2f}"
+                        
+                        # Adjust column widths
+                        for column in worksheet.columns:
+                            max_length = 0
+                            column = [cell for cell in column]
+                            for cell in column:
+                                try:
+                                    if len(str(cell.value)) > max_length:
+                                        max_length = len(str(cell.value))
+                                except:
+                                    pass
+                            adjusted_width = min(max_length + 2, 50)
+                            worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+                    
+                    excel_bytes = output.getvalue()
+                    
+                    # Download button
+                    st.download_button(
+                        label="⬇️ Download Quotation Excel",
+                        data=excel_bytes,
+                        file_name=f"Quotation_{selected_quotation}_{quotation_details['customer_name'].replace(' ', '_')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                    
+                    st.success("Quotation document generated successfully!")
+                
+                # Preview the quotation format
+                st.subheader("Quotation Preview")
+                
+                st.write("**QUOTATION**")
+                st.write("")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"**Customer Name:** {quotation_details['customer_name']}")
+                    st.write(f"**Quotation ID:** {quotation_details['quotation_id']}")
+                with col2:
+                    st.write(f"**Date:** {quotation_details['quotation_date']}")
+                
+                st.write("")
+                
+                # Create preview table
+                if not quotation_items.empty:
+                    preview_data = []
+                    
+                    for idx, item in quotation_items.iterrows():
+                        original_price = item['price']
+                        discount_amount = original_price * (item['discount'] / 100)
+                        unit_price_after_discount = original_price - discount_amount
+                        final_price = unit_price_after_discount * item['quantity']
+                        
+                        preview_data.append({
+                            'Sr. No.': idx + 1,
+                            'Model': item['model'],
+                            'Body Color': item['body_color'],
+                            'Light Color': item['light_color'],
+                            'Size': item.get('size', 'N/A'),
+                            'Watt': item.get('watt', 'N/A'),
+                            'Beam Angle': item.get('beam_angle', 'N/A'),
+                            'Cut Out': item.get('cut_out', 'N/A'),
+                            'Quantity': item['quantity'],
+                            'Unit Price (After Discount)': f"₹{unit_price_after_discount:,.2f}",
+                            'Final Price': f"₹{final_price:,.2f}"
+                        })
+                    
+                    preview_df = pd.DataFrame(preview_data)
+                    st.dataframe(preview_df, use_container_width=True)
+                    
+                    st.write("")
+                    st.write(f"**TOTAL: ₹{quotation_details['final_amount']:,.2f}**")
+        else:
+            st.info("No quotations available to download. Create quotations first.")
 
 if __name__ == "__main__":
     main()
