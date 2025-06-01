@@ -233,10 +233,9 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     # Debug: print available columns
     print(f"Available columns: {list(df_export.columns)}")
     
-    # Try different possible column names for final price (case insensitive)
-    price_columns = ['final_price', 'Final Price', 'FINAL PRICE', 'final_amount', 'Final Amount', 'FINAL AMOUNT', 
-                    'total_price', 'Total Price', 'TOTAL PRICE', 'price', 'Price', 'PRICE',
-                    'amount', 'Amount', 'AMOUNT']
+    # Priority order for finding the correct total column
+    price_columns = ['item_total', 'Item Total', 'ITEM TOTAL', 'total', 'Total', 'TOTAL',
+                    'final_price', 'Final Price', 'FINAL PRICE', 'final_amount', 'Final Amount', 'FINAL AMOUNT']
     
     for col in price_columns:
         # Check both exact match and case-insensitive match
