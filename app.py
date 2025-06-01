@@ -100,30 +100,48 @@ def main():
         all_data = db.get_all_data()
         
         with filter_cols[0]:
-            modules = ['All'] + sorted(all_data['MODULE'].dropna().unique().tolist()) if 'MODULE' in all_data.columns else ['All']
+            if 'MODULE' in all_data.columns:
+                modules = ['All'] + sorted([str(x) for x in all_data['MODULE'].dropna().unique().tolist()])
+            else:
+                modules = ['All']
             selected_module = st.selectbox("Module", modules)
         
         with filter_cols[1]:
-            colors = ['All'] + sorted(all_data['BODY COLOUR'].dropna().unique().tolist()) if 'BODY COLOUR' in all_data.columns else ['All']
+            if 'BODY COLOUR' in all_data.columns:
+                colors = ['All'] + sorted([str(x) for x in all_data['BODY COLOUR'].dropna().unique().tolist()])
+            else:
+                colors = ['All']
             selected_color = st.selectbox("Body Colour", colors)
         
         with filter_cols[2]:
-            watts = ['All'] + sorted(all_data['WATT'].dropna().unique().tolist()) if 'WATT' in all_data.columns else ['All']
+            if 'WATT' in all_data.columns:
+                watts = ['All'] + sorted([str(x) for x in all_data['WATT'].dropna().unique().tolist()])
+            else:
+                watts = ['All']
             selected_watt = st.selectbox("Watt", watts)
         
         # Additional filters
         filter_cols2 = st.columns(3)
         
         with filter_cols2[0]:
-            sizes = ['All'] + sorted(all_data['SIZE'].dropna().unique().tolist()) if 'SIZE' in all_data.columns else ['All']
+            if 'SIZE' in all_data.columns:
+                sizes = ['All'] + sorted([str(x) for x in all_data['SIZE'].dropna().unique().tolist()])
+            else:
+                sizes = ['All']
             selected_size = st.selectbox("Size", sizes)
         
         with filter_cols2[1]:
-            beam_angles = ['All'] + sorted(all_data['BEAM ANGLE'].dropna().unique().tolist()) if 'BEAM ANGLE' in all_data.columns else ['All']
+            if 'BEAM ANGLE' in all_data.columns:
+                beam_angles = ['All'] + sorted([str(x) for x in all_data['BEAM ANGLE'].dropna().unique().tolist()])
+            else:
+                beam_angles = ['All']
             selected_beam_angle = st.selectbox("Beam Angle", beam_angles)
         
         with filter_cols2[2]:
-            single_colors = ['All'] + sorted(all_data['SINGLE COLOUR OPTION'].dropna().unique().tolist()) if 'SINGLE COLOUR OPTION' in all_data.columns else ['All']
+            if 'SINGLE COLOUR OPTION' in all_data.columns:
+                single_colors = ['All'] + sorted([str(x) for x in all_data['SINGLE COLOUR OPTION'].dropna().unique().tolist()])
+            else:
+                single_colors = ['All']
             selected_single_color = st.selectbox("Single Colour Option", single_colors)
     
     # Build filters dictionary
@@ -164,19 +182,22 @@ def main():
         
         # Export functionality
         if export_button:
-            # Create Excel file in memory
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                filtered_data.to_excel(writer, sheet_name='Quotation_Results', index=False)
-            
-            output.seek(0)
-            
-            st.download_button(
-                label="Download Excel File",
-                data=output.getvalue(),
-                file_name=f"quotation_results_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            try:
+                # Create Excel file in memory
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    filtered_data.to_excel(writer, sheet_name='Quotation_Results', index=False)
+                
+                output.seek(0)
+                
+                st.download_button(
+                    label="Download Excel File",
+                    data=output.getvalue(),
+                    file_name=f"quotation_results_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            except Exception as e:
+                st.error(f"Error creating Excel file: {str(e)}")
         
         # Display data in pages
         items_per_page = 25
@@ -188,6 +209,7 @@ def main():
             end_idx = start_idx + items_per_page
             page_data = filtered_data.iloc[start_idx:end_idx]
         else:
+            page = 1
             page_data = filtered_data
         
         # Format and display the dataframe
