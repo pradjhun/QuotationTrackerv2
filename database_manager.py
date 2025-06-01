@@ -164,9 +164,18 @@ class DatabaseManager:
         Returns:
             Complete DataFrame
         """
-        if 'quotation_database' not in st.session_state:
-            st.session_state.quotation_database = pd.DataFrame()
-        return st.session_state.quotation_database.copy()
+        try:
+            conn = self._get_connection()
+            df = pd.read_sql_query('''
+                SELECT sl_no as "SL.NO", model as "MODEL", body_color as "BODY CLOLOR", 
+                       picture as "PICTURE", price as "PRICE", watt as "WATT", 
+                       size as "SIZE", beam_angle as "BEAM ANGLE", cut_out as "CUT OUT"
+                FROM quotations ORDER BY id
+            ''', conn)
+            conn.close()
+            return df
+        except Exception as e:
+            return pd.DataFrame()
     
     def get_total_records(self) -> int:
         """
@@ -175,13 +184,26 @@ class DatabaseManager:
         Returns:
             Number of records
         """
-        if 'quotation_database' not in st.session_state:
-            st.session_state.quotation_database = pd.DataFrame()
-        return len(st.session_state.quotation_database)
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM quotations")
+            count = cursor.fetchone()[0]
+            conn.close()
+            return count
+        except Exception as e:
+            return 0
     
     def clear_database(self) -> None:
         """Clear all data from the database."""
-        st.session_state.quotation_database = pd.DataFrame()
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM quotations")
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            st.error(f"Error clearing database: {str(e)}")
     
     def get_column_unique_values(self, column: str) -> list:
         """
