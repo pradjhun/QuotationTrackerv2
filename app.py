@@ -262,12 +262,161 @@ def main():
         
         # Admin-only tabs
         with tab2:
-            st.header("➕ Add Product")
-            st.info("Add Product functionality will be available in the next update.")
+            st.header("➕ Add New Product")
+            
+            with st.form("add_product_form"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    new_sno = st.text_input("S.NO", placeholder="Enter serial number")
+                    new_model = st.text_input("MODEL", placeholder="Enter model name")
+                    new_body_color = st.text_input("BODY COLOR", placeholder="Enter body color")
+                    new_picture = st.text_input("PICTURE", placeholder="Enter picture filename")
+                
+                with col2:
+                    new_price = st.number_input("PRICE", min_value=0.0, format="%.2f")
+                    new_watt = st.text_input("WATT", placeholder="Enter wattage")
+                    new_size = st.text_input("SIZE", placeholder="Enter size")
+                    new_beam_angle = st.text_input("BEAM ANGLE", placeholder="Enter beam angle")
+                    new_cut_out = st.text_input("CUT OUT", placeholder="Enter cut out")
+                
+                submitted = st.form_submit_button("➕ Add Product", type="primary")
+                
+                if submitted:
+                    if new_model and new_body_color:  # Basic validation
+                        new_product = {
+                            'S.NO': new_sno if new_sno else '',
+                            'MODEL': new_model,
+                            'BODY CLOLOR': new_body_color,
+                            'PICTURE': new_picture,
+                            'PRICE': new_price,
+                            'WATT': new_watt,
+                            'SIZE': new_size,
+                            'BEAM ANGLE': new_beam_angle,
+                            'CUT OUT': new_cut_out
+                        }
+                        
+                        # Add to database
+                        new_df = pd.DataFrame([new_product])
+                        success, message = db.import_data(new_df)
+                        
+                        if success:
+                            st.success("Product added successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"Failed to add product: {message}")
+                    else:
+                        st.error("Please fill in at least Model and Body Color")
         
         with tab3:
-            st.header("✏️ Edit Product")
-            st.info("Edit Product functionality will be available in the next update.")
+            st.header("✏️ Edit Products")
+            
+            all_products = db.get_all_data()
+            
+            if not all_products.empty:
+                st.subheader("Select Product to Edit")
+                
+                # Create a product selector
+                product_options = []
+                for idx, row in all_products.iterrows():
+                    model = row.get('MODEL', 'Unknown')
+                    color = row.get('BODY CLOLOR', 'Unknown')
+                    price = row.get('PRICE', 'Unknown')
+                    product_options.append(f"{model} - {color} (₹{price})")
+                
+                selected_product_str = st.selectbox("Select product to edit:", product_options)
+                
+                if selected_product_str:
+                    # Find the selected product
+                    selected_model = selected_product_str.split(' - ')[0]
+                    selected_product = None
+                    selected_index = None
+                    
+                    for idx, row in all_products.iterrows():
+                        if row.get('MODEL', '') == selected_model:
+                            selected_product = row
+                            selected_index = idx
+                            break
+                    
+                    if selected_product is not None:
+                        with st.form("edit_product_form"):
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                edit_sno = st.text_input("S.NO", value=str(selected_product.get('S.NO', '')), key="edit_sno")
+                                edit_model = st.text_input("MODEL", value=str(selected_product.get('MODEL', '')), key="edit_model")
+                                edit_body_color = st.text_input("BODY COLOR", value=str(selected_product.get('BODY CLOLOR', '')), key="edit_body_color")
+                                edit_picture = st.text_input("PICTURE", value=str(selected_product.get('PICTURE', '')), key="edit_picture")
+                            
+                            with col2:
+                                try:
+                                    current_price = float(selected_product.get('PRICE', 0))
+                                except (ValueError, TypeError):
+                                    current_price = 0.0
+                                edit_price = st.number_input("PRICE", value=current_price, min_value=0.0, format="%.2f", key="edit_price")
+                                edit_watt = st.text_input("WATT", value=str(selected_product.get('WATT', '')), key="edit_watt")
+                                edit_size = st.text_input("SIZE", value=str(selected_product.get('SIZE', '')), key="edit_size")
+                                edit_beam_angle = st.text_input("BEAM ANGLE", value=str(selected_product.get('BEAM ANGLE', '')), key="edit_beam_angle")
+                                edit_cut_out = st.text_input("CUT OUT", value=str(selected_product.get('CUT OUT', '')), key="edit_cut_out")
+                            
+                            col_submit, col_delete = st.columns([1, 1])
+                            
+                            with col_submit:
+                                update_submitted = st.form_submit_button("💾 Update Product", type="primary")
+                            
+                            with col_delete:
+                                delete_clicked = st.form_submit_button("🗑️ Delete Product", type="secondary")
+                            
+                            if update_submitted:
+                                if edit_model and edit_body_color:
+                                    # Update product in database
+                                    updated_product = {
+                                        'S.NO': edit_sno,
+                                        'MODEL': edit_model,
+                                        'BODY CLOLOR': edit_body_color,
+                                        'PICTURE': edit_picture,
+                                        'PRICE': edit_price,
+                                        'WATT': edit_watt,
+                                        'SIZE': edit_size,
+                                        'BEAM ANGLE': edit_beam_angle,
+                                        'CUT OUT': edit_cut_out
+                                    }
+                                    
+                                    # Update the dataframe
+                                    all_products_updated = all_products.copy()
+                                    for col, value in updated_product.items():
+                                        if col in all_products_updated.columns:
+                                            all_products_updated.loc[selected_index, col] = value
+                                    
+                                    # Clear and reimport
+                                    db.clear_database()
+                                    success, message = db.import_data(all_products_updated)
+                                    
+                                    if success:
+                                        st.success("Product updated successfully!")
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Failed to update product: {message}")
+                                else:
+                                    st.error("Model and Body Color are required")
+                            
+                            if delete_clicked:
+                                # Delete the selected product
+                                updated_products = all_products.drop(selected_index).reset_index(drop=True)
+                                
+                                db.clear_database()
+                                if not updated_products.empty:
+                                    success, message = db.import_data(updated_products)
+                                    if success:
+                                        st.success("Product deleted successfully!")
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Failed to delete product: {message}")
+                                else:
+                                    st.success("Product deleted successfully!")
+                                    st.rerun()
+            else:
+                st.info("No products available to edit. Please import some data first.")
     else:
         tab1, tab4, tab5, tab6 = st.tabs([
             "📋 Browse Products", 
