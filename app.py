@@ -344,8 +344,12 @@ To restore:
         
         return
     
-    # Search and filter section
-    st.header("🔍 Search & Filter")
+    # Create tabs for different operations
+    tab1, tab2, tab3 = st.tabs(["🔍 Browse Products", "📋 Create Quotation", "📄 View Quotations"])
+    
+    with tab1:
+        # Search and filter section
+        st.header("🔍 Search & Filter")
     
     col1, col2 = st.columns([2, 1])
     
@@ -872,6 +876,225 @@ To restore:
                         st.rerun()
         else:
             st.info("No records available to delete.")
+    
+    with tab2:
+        # Quotation Creation Tab
+        st.header("📋 Create Quotation")
+        
+        # Initialize quotation session state
+        if 'quotation_items' not in st.session_state:
+            st.session_state.quotation_items = []
+        
+        # Customer Information
+        st.subheader("Customer Information")
+        customer_name = st.text_input("Customer Name", placeholder="Enter customer name")
+        
+        # Product Search and Selection
+        st.subheader("Add Products to Quotation")
+        
+        # Search for products
+        search_col1, search_col2 = st.columns([3, 1])
+        with search_col1:
+            product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.")
+        with search_col2:
+            if st.button("🔍 Search"):
+                st.rerun()
+        
+        # Get available products
+        all_products = db.get_all_data()
+        if not all_products.empty:
+            # Filter products based on search
+            if product_search:
+                filtered_products = all_products[
+                    all_products.astype(str).apply(
+                        lambda x: x.str.lower().str.contains(product_search.lower(), na=False)
+                    ).any(axis=1)
+                ]
+            else:
+                filtered_products = all_products
+            
+            if not filtered_products.empty:
+                st.subheader("Available Products")
+                
+                # Display products in a selectable format
+                for idx, row in filtered_products.iterrows():
+                    with st.expander(f"{row.get('MODEL', 'N/A')} - {row.get('BODY CLOLOR', 'N/A')} - ₹{row.get('PRICE', 'N/A')}"):
+                        col1, col2, col3 = st.columns([2, 1, 1])
+                        
+                        with col1:
+                            st.write(f"**Model:** {row.get('MODEL', 'N/A')}")
+                            st.write(f"**Body Color:** {row.get('BODY CLOLOR', 'N/A')}")
+                            st.write(f"**Price:** ₹{row.get('PRICE', 'N/A')}")
+                            st.write(f"**Watt:** {row.get('WATT', 'N/A')}")
+                            st.write(f"**Size:** {row.get('SIZE', 'N/A')}")
+                            st.write(f"**Beam Angle:** {row.get('BEAM ANGLE', 'N/A')}")
+                            st.write(f"**Cut Out:** {row.get('CUT OUT', 'N/A')}")
+                        
+                        with col2:
+                            # Image preview if available
+                            picture = row.get('PICTURE', '')
+                            if picture and 'uploaded_images' in st.session_state and picture in st.session_state.uploaded_images:
+                                st.image(st.session_state.uploaded_images[picture], width=100)
+                            else:
+                                st.write("No image")
+                        
+                        with col3:
+                            # Add to quotation form
+                            with st.form(f"add_product_{idx}"):
+                                quantity = st.number_input("Quantity", min_value=1, value=1, key=f"qty_{idx}")
+                                light_color = st.selectbox("Light Color", 
+                                    options=["Warm White", "Cool White", "Natural White", "RGB", "Other"],
+                                    key=f"light_{idx}")
+                                discount = st.number_input("Discount (%)", min_value=0.0, max_value=100.0, value=0.0, key=f"discount_{idx}")
+                                
+                                if st.form_submit_button("Add to Quotation"):
+                                    try:
+                                        price = float(str(row.get('PRICE', 0)).replace('₹', '').replace(',', '') or 0)
+                                        item_total = price * quantity
+                                        discount_amount = item_total * (discount / 100)
+                                        final_total = item_total - discount_amount
+                                        
+                                        item = {
+                                            'product_id': idx,
+                                            'model': row.get('MODEL', ''),
+                                            'body_color': row.get('BODY CLOLOR', ''),
+                                            'picture': row.get('PICTURE', ''),
+                                            'price': price,
+                                            'watt': row.get('WATT', ''),
+                                            'size': row.get('SIZE', ''),
+                                            'beam_angle': row.get('BEAM ANGLE', ''),
+                                            'cut_out': row.get('CUT OUT', ''),
+                                            'light_color': light_color,
+                                            'quantity': quantity,
+                                            'discount': discount,
+                                            'item_total': final_total
+                                        }
+                                        
+                                        st.session_state.quotation_items.append(item)
+                                        st.success(f"Added {row.get('MODEL', 'Product')} to quotation!")
+                                        st.rerun()
+                                    except ValueError:
+                                        st.error("Invalid price format. Please check the product data.")
+            else:
+                st.info("No products found matching your search.")
+        
+        # Display current quotation
+        if st.session_state.quotation_items:
+            st.subheader("Current Quotation Items")
+            
+            quotation_df = pd.DataFrame(st.session_state.quotation_items)
+            
+            # Display quotation items with remove option
+            for i, item in enumerate(st.session_state.quotation_items):
+                with st.container():
+                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                    
+                    with col1:
+                        st.write(f"**{item['model']}** - {item['body_color']}")
+                        st.write(f"Light Color: {item['light_color']}")
+                    
+                    with col2:
+                        st.write(f"Qty: {item['quantity']}")
+                        st.write(f"Price: ₹{item['price']:,.2f}")
+                    
+                    with col3:
+                        st.write(f"Discount: {item['discount']}%")
+                        st.write(f"Total: ₹{item['item_total']:,.2f}")
+                    
+                    with col4:
+                        if st.button(f"Remove", key=f"remove_{i}"):
+                            st.session_state.quotation_items.pop(i)
+                            st.rerun()
+                    
+                    st.divider()
+            
+            # Quotation summary
+            total_amount = sum(item['item_total'] for item in st.session_state.quotation_items)
+            total_discount = sum((item['price'] * item['quantity'] * item['discount'] / 100) for item in st.session_state.quotation_items)
+            
+            st.subheader("Quotation Summary")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Subtotal", f"₹{sum(item['price'] * item['quantity'] for item in st.session_state.quotation_items):,.2f}")
+            
+            with col2:
+                st.metric("Total Discount", f"₹{total_discount:,.2f}")
+            
+            with col3:
+                st.metric("Final Amount", f"₹{total_amount:,.2f}")
+            
+            # Save quotation
+            if customer_name:
+                if st.button("💾 Save Quotation", type="primary"):
+                    import datetime
+                    quotation_id = f"QUO-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                    
+                    success, message = db.save_quotation(
+                        quotation_id=quotation_id,
+                        customer_name=customer_name,
+                        items=st.session_state.quotation_items,
+                        total_amount=sum(item['price'] * item['quantity'] for item in st.session_state.quotation_items),
+                        discount_total=total_discount,
+                        final_amount=total_amount
+                    )
+                    
+                    if success:
+                        st.success(f"Quotation saved successfully! ID: {quotation_id}")
+                        st.session_state.quotation_items = []
+                        st.rerun()
+                    else:
+                        st.error(message)
+            else:
+                st.warning("Please enter customer name to save quotation.")
+            
+            # Clear quotation
+            if st.button("🗑️ Clear Quotation"):
+                st.session_state.quotation_items = []
+                st.rerun()
+        
+        else:
+            st.info("No items in quotation. Add products from the search results above.")
+    
+    with tab3:
+        # View Quotations Tab
+        st.header("📄 View Saved Quotations")
+        
+        quotations = db.get_quotations()
+        
+        if not quotations.empty:
+            # Display quotations in a table
+            st.dataframe(quotations, use_container_width=True)
+            
+            # Select quotation to view details
+            if len(quotations) > 0:
+                selected_quotation = st.selectbox(
+                    "Select quotation to view details:",
+                    options=quotations['quotation_id'].tolist(),
+                    format_func=lambda x: f"{x} - {quotations[quotations['quotation_id']==x]['customer_name'].iloc[0]}"
+                )
+                
+                if selected_quotation:
+                    quotation_details = quotations[quotations['quotation_id'] == selected_quotation].iloc[0]
+                    quotation_items = db.get_quotation_items(selected_quotation)
+                    
+                    st.subheader(f"Quotation Details: {selected_quotation}")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.write(f"**Customer:** {quotation_details['customer_name']}")
+                        st.write(f"**Date:** {quotation_details['quotation_date']}")
+                    
+                    with col2:
+                        st.write(f"**Total Amount:** ₹{quotation_details['total_amount']:,.2f}")
+                        st.write(f"**Final Amount:** ₹{quotation_details['final_amount']:,.2f}")
+                    
+                    if not quotation_items.empty:
+                        st.subheader("Items")
+                        st.dataframe(quotation_items[['model', 'body_color', 'light_color', 'quantity', 'price', 'discount', 'item_total']], 
+                                   use_container_width=True)
+        else:
+            st.info("No quotations found. Create your first quotation in the 'Create Quotation' tab.")
 
 if __name__ == "__main__":
     main()

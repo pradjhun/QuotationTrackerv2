@@ -32,6 +32,42 @@ class DatabaseManager:
                 )
             ''')
             
+            # Create quotations table for generated quotes
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS generated_quotations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    quotation_id TEXT UNIQUE,
+                    customer_name TEXT,
+                    quotation_date DATE,
+                    total_amount REAL,
+                    discount_total REAL,
+                    final_amount REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Create quotation items table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS quotation_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    quotation_id TEXT,
+                    product_id INTEGER,
+                    model TEXT,
+                    body_color TEXT,
+                    picture TEXT,
+                    price REAL,
+                    watt TEXT,
+                    size TEXT,
+                    beam_angle TEXT,
+                    cut_out TEXT,
+                    light_color TEXT,
+                    quantity INTEGER,
+                    discount REAL,
+                    item_total REAL,
+                    FOREIGN KEY (quotation_id) REFERENCES generated_quotations (quotation_id)
+                )
+            ''')
+            
             conn.commit()
             conn.close()
         except Exception as e:
@@ -215,6 +251,68 @@ class DatabaseManager:
         Returns:
             List of unique values
         """
-        if column in st.session_state.quotation_database.columns:
-            return st.session_state.quotation_database[column].dropna().unique().tolist()
+        df = self.get_all_data()
+        if column in df.columns:
+            return df[column].dropna().unique().tolist()
         return []
+    
+    def save_quotation(self, quotation_id: str, customer_name: str, items: list, total_amount: float, discount_total: float, final_amount: float) -> Tuple[bool, str]:
+        """Save a quotation to the database."""
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            # Insert quotation header
+            cursor.execute('''
+                INSERT INTO generated_quotations 
+                (quotation_id, customer_name, quotation_date, total_amount, discount_total, final_amount)
+                VALUES (?, ?, DATE('now'), ?, ?, ?)
+            ''', (quotation_id, customer_name, total_amount, discount_total, final_amount))
+            
+            # Insert quotation items
+            for item in items:
+                cursor.execute('''
+                    INSERT INTO quotation_items 
+                    (quotation_id, product_id, model, body_color, picture, price, watt, size, 
+                     beam_angle, cut_out, light_color, quantity, discount, item_total)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (quotation_id, item['product_id'], item['model'], item['body_color'], 
+                      item['picture'], item['price'], item['watt'], item['size'],
+                      item['beam_angle'], item['cut_out'], item['light_color'], 
+                      item['quantity'], item['discount'], item['item_total']))
+            
+            conn.commit()
+            conn.close()
+            return True, f"Quotation {quotation_id} saved successfully"
+            
+        except Exception as e:
+            return False, f"Error saving quotation: {str(e)}"
+    
+    def get_quotations(self) -> pd.DataFrame:
+        """Get all saved quotations."""
+        try:
+            conn = self._get_connection()
+            df = pd.read_sql_query('''
+                SELECT quotation_id, customer_name, quotation_date, 
+                       total_amount, discount_total, final_amount, created_at
+                FROM generated_quotations 
+                ORDER BY created_at DESC
+            ''', conn)
+            conn.close()
+            return df
+        except Exception as e:
+            return pd.DataFrame()
+    
+    def get_quotation_items(self, quotation_id: str) -> pd.DataFrame:
+        """Get items for a specific quotation."""
+        try:
+            conn = self._get_connection()
+            df = pd.read_sql_query('''
+                SELECT * FROM quotation_items 
+                WHERE quotation_id = ?
+                ORDER BY id
+            ''', conn, params=(quotation_id,))
+            conn.close()
+            return df
+        except Exception as e:
+            return pd.DataFrame()
