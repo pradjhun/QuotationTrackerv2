@@ -324,10 +324,12 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         'item_total': 15
     }
     
-    # Apply column widths
+    # Apply column widths using column letters directly
+    from openpyxl.utils import get_column_letter
     for col_num, header in enumerate(headers, 1):
         width = column_widths.get(header, 15)  # Default width 15
-        ws.column_dimensions[ws.cell(row=1, column=col_num).column_letter].width = width
+        column_letter = get_column_letter(col_num)
+        ws.column_dimensions[column_letter].width = width
     
     # Add totals section
     totals_start_row = final_data_row + 2
