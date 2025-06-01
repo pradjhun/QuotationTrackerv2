@@ -215,70 +215,85 @@ def main():
         # Format and display the dataframe
         formatted_df = format_dataframe_display(page_data)
         
-        # Check if there are images to display
-        if 'PICTURE' in formatted_df.columns and not formatted_df['PICTURE'].isna().all():
-            # Display with image support
-            st.subheader("📸 Product Gallery")
+        # Add image upload section
+        with st.expander("📸 Upload Product Images (Optional)"):
+            st.info("Upload product images to display alongside your data. Image files should match the names in the PICTURE column.")
+            uploaded_images = st.file_uploader(
+                "Choose image files",
+                type=['png', 'jpg', 'jpeg', 'gif'],
+                accept_multiple_files=True,
+                help="Upload images that correspond to the filenames in your Excel PICTURE column"
+            )
             
-            # Create image folder upload option
-            with st.expander("Upload Product Images"):
-                st.info("Upload a folder containing product images. Image files should match the names in the PICTURE column.")
-                uploaded_images = st.file_uploader(
-                    "Choose image files",
-                    type=['png', 'jpg', 'jpeg', 'gif'],
-                    accept_multiple_files=True,
-                    help="Upload images that correspond to the filenames in your Excel PICTURE column"
-                )
+            # Store uploaded images in session state
+            if uploaded_images:
+                if 'uploaded_images' not in st.session_state:
+                    st.session_state.uploaded_images = {}
                 
-                # Store uploaded images in session state
-                if uploaded_images:
-                    if 'uploaded_images' not in st.session_state:
-                        st.session_state.uploaded_images = {}
-                    
-                    for uploaded_file in uploaded_images:
-                        st.session_state.uploaded_images[uploaded_file.name] = uploaded_file.getvalue()
-                    
-                    st.success(f"Uploaded {len(uploaded_images)} images successfully!")
+                for uploaded_file in uploaded_images:
+                    st.session_state.uploaded_images[uploaded_file.name] = uploaded_file.getvalue()
+                
+                st.success(f"Uploaded {len(uploaded_images)} images successfully!")
+        
+        # Check if we should show image gallery view
+        show_gallery = ('uploaded_images' in st.session_state and 
+                       len(st.session_state.uploaded_images) > 0 and 
+                       'PICTURE' in formatted_df.columns)
+        
+        if show_gallery:
+            # Toggle between gallery and table view
+            view_mode = st.radio("View Mode:", ["Gallery View", "Table View"], horizontal=True)
             
-            # Display data with images
-            for idx, row in formatted_df.iterrows():
-                with st.container():
-                    col1, col2 = st.columns([1, 3])
-                    
-                    with col1:
-                        picture_name = str(row.get('PICTURE', ''))
-                        if picture_name and picture_name != '' and picture_name != 'nan':
-                            # Try to find matching image
-                            image_found = False
-                            if 'uploaded_images' in st.session_state:
+            if view_mode == "Gallery View":
+                st.subheader("📸 Product Gallery")
+                
+                # Display data with images
+                for idx, row in formatted_df.iterrows():
+                    with st.container():
+                        col1, col2 = st.columns([1, 3])
+                        
+                        with col1:
+                            picture_name = str(row.get('PICTURE', ''))
+                            if picture_name and picture_name not in ['', 'nan', 'None']:
+                                # Try to find matching image
+                                image_found = False
                                 # Try exact match first
                                 if picture_name in st.session_state.uploaded_images:
                                     st.image(st.session_state.uploaded_images[picture_name], width=150)
                                     image_found = True
                                 else:
-                                    # Try partial match (without extension or with different extension)
+                                    # Try partial match
                                     base_name = picture_name.split('.')[0] if '.' in picture_name else picture_name
                                     for img_name in st.session_state.uploaded_images.keys():
                                         if base_name.lower() in img_name.lower() or img_name.split('.')[0].lower() == base_name.lower():
                                             st.image(st.session_state.uploaded_images[img_name], width=150)
                                             image_found = True
                                             break
-                            
-                            if not image_found:
-                                st.write("🖼️ Image not found")
-                                st.caption(f"Looking for: {picture_name}")
-                        else:
-                            st.write("📷 No image")
-                    
-                    with col2:
-                        # Display other product details
-                        details_df = pd.DataFrame([row.drop('PICTURE') if 'PICTURE' in row else row]).T
-                        details_df.columns = ['Value']
-                        st.dataframe(details_df, use_container_width=True)
-                    
-                    st.divider()
+                                
+                                if not image_found:
+                                    st.write("🖼️ Image not found")
+                                    st.caption(f"Looking for: {picture_name}")
+                            else:
+                                st.write("📷 No image")
+                        
+                        with col2:
+                            # Display other product details
+                            st.write("**Product Details:**")
+                            for col_name, value in row.items():
+                                if col_name != 'PICTURE' and pd.notna(value) and str(value) not in ['', 'nan', 'None']:
+                                    st.write(f"**{col_name}:** {value}")
+                        
+                        st.divider()
+            else:
+                # Regular table display
+                st.dataframe(
+                    formatted_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=600
+                )
         else:
-            # Regular table display when no images
+            # Show regular table when no images are uploaded
             st.dataframe(
                 formatted_df,
                 use_container_width=True,
