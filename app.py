@@ -432,21 +432,29 @@ def main():
             # Display quotation items with remove option
             for i, item in enumerate(st.session_state.quotation_items):
                 with st.container():
-                    col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                    col1, col2, col3, col4, col5 = st.columns([1, 2, 1, 1, 1])
                     
                     with col1:
+                        # Display product image
+                        picture = item.get('picture', '')
+                        if picture and picture in st.session_state.uploaded_images:
+                            st.image(st.session_state.uploaded_images[picture], width=80)
+                        else:
+                            st.info("No image")
+                    
+                    with col2:
                         st.write(f"**{item['model']}** - {item['body_color']}")
                         st.write(f"Light Color: {item['light_color']}")
                     
-                    with col2:
+                    with col3:
                         st.write(f"Qty: {item['quantity']}")
                         st.write(f"Price: ₹{item['price']:,.2f}")
                     
-                    with col3:
+                    with col4:
                         st.write(f"Discount: {item['discount']}%")
                         st.write(f"Total: ₹{item['item_total']:,.2f}")
                     
-                    with col4:
+                    with col5:
                         if st.button(f"Remove", key=f"remove_{i}"):
                             st.session_state.quotation_items.pop(i)
                             st.rerun()
@@ -535,8 +543,32 @@ def main():
                     
                     if not quotation_items.empty:
                         st.subheader("Items")
-                        st.dataframe(quotation_items[['model', 'body_color', 'light_color', 'quantity', 'price', 'discount', 'item_total']], 
-                                   use_container_width=True)
+                        
+                        # Display quotation items with images
+                        for idx, item in quotation_items.iterrows():
+                            with st.container():
+                                col1, col2, col3 = st.columns([1, 3, 2])
+                                
+                                with col1:
+                                    # Display product image
+                                    picture = item.get('picture', '')
+                                    if picture and picture in st.session_state.uploaded_images:
+                                        st.image(st.session_state.uploaded_images[picture], width=100)
+                                    else:
+                                        st.info("No image")
+                                
+                                with col2:
+                                    st.write(f"**{item['model']}** - {item['body_color']}")
+                                    st.write(f"Light Color: {item['light_color']}")
+                                    st.write(f"Watt: {item.get('watt', 'N/A')} | Size: {item.get('size', 'N/A')}")
+                                
+                                with col3:
+                                    st.write(f"**Quantity:** {item['quantity']}")
+                                    st.write(f"**Price:** ₹{item['price']:,.2f}")
+                                    st.write(f"**Discount:** {item['discount']}%")
+                                    st.write(f"**Total:** ₹{item['item_total']:,.2f}")
+                                
+                                st.divider()
         else:
             st.info("No quotations found. Create your first quotation in the 'Create Quotation' tab.")
 
