@@ -131,10 +131,12 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     from openpyxl.utils.dataframe import dataframe_to_rows
     from openpyxl.styles import Font, Alignment, Border, Side
     
-    # Create a copy of the dataframe and remove product_id if it exists
+    # Create a copy of the dataframe and remove unnecessary columns
     df_export = df.copy()
-    if 'product_id' in df_export.columns:
-        df_export = df_export.drop('product_id', axis=1)
+    columns_to_remove = ['product_id', 'quotation_id']
+    for col in columns_to_remove:
+        if col in df_export.columns:
+            df_export = df_export.drop(col, axis=1)
     
     # Create workbook and worksheet
     wb = Workbook()
