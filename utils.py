@@ -156,7 +156,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
         cell.alignment = Alignment(horizontal='center')
     
     # Set row height for image display
-    image_row_height = 240
+    image_row_height = 80
     
     # Add data rows
     for row_idx, (_, row) in enumerate(df_export.iterrows(), start=2):
@@ -171,8 +171,8 @@ def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
                         try:
                             # Insert image
                             img = image.Image(image_path)
-                            img.width = 180
-                            img.height = 180
+                            img.width = 60
+                            img.height = 60
                             
                             # Position image in cell
                             cell_address = ws.cell(row=row_idx, column=col_idx).coordinate
