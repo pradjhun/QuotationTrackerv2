@@ -279,16 +279,20 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
                             # Set cell value to empty since we have image
                             cell = ws.cell(row=row_idx, column=col_idx, value="")
                             cell.border = thin_border
+                            cell.alignment = Alignment(horizontal='center', vertical='center')
                         except Exception:
                             # If image fails to load, show filename
                             cell = ws.cell(row=row_idx, column=col_idx, value=str(value))
                             cell.border = thin_border
+                            cell.alignment = Alignment(horizontal='center', vertical='center')
                     else:
                         cell = ws.cell(row=row_idx, column=col_idx, value="Image not found")
                         cell.border = thin_border
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
                 else:
                     cell = ws.cell(row=row_idx, column=col_idx, value="No image")
                     cell.border = thin_border
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
             else:
                 # Check if this is a price or item_total column to add Rupee symbol
                 header_name = headers[col_idx - 1].lower() if col_idx - 1 < len(headers) else ""
