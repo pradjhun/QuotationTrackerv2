@@ -218,7 +218,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     # Add headers with styling
     headers = list(df_export.columns)
     
-    # Replace column headers for better formatting
+    # Replace column headers for better formatting and convert to sentence case
     header_replacements = {
         'picture': 'Product Image',
         'id': 'Product No'
@@ -228,6 +228,10 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         for old_name, new_name in header_replacements.items():
             if header.lower() == old_name:
                 headers[i] = new_name
+        
+        # Convert remaining headers to sentence case
+        if headers[i] not in header_replacements.values():
+            headers[i] = headers[i].replace('_', ' ').title()
     
     # Create border style
     thin_border = Border(
@@ -237,12 +241,12 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         bottom=Side(style='thin')
     )
     
-    # Write headers with borders
+    # Write headers with borders and center alignment
     header_row = current_row
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=header_row, column=col_num, value=header)
         cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal='center')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
         cell.border = thin_border
     
     current_row += 1
@@ -306,9 +310,8 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
                     cell = ws.cell(row=row_idx, column=col_idx, value=value)
                     cell.border = thin_border
                     
-                    # Center align model column for better appearance
-                    if header_name == "model":
-                        cell.alignment = Alignment(horizontal='center', vertical='center')
+                    # Center align all table cells for better appearance
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
     
     # Calculate final row after data
     final_data_row = current_row + len(df_export) - 1
