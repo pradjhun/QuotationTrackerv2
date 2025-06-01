@@ -713,14 +713,26 @@ def main():
                     
                     with col3:
                         if st.button("➕ Add", key=f"add_{idx}"):
-                            # Add item to quotation
+                            # Add item to quotation with all required fields
+                            price = float(row.get('PRICE', 0))
+                            item_total = quantity * price * (1 - discount/100)
                             item = {
+                                'product_id': idx,  # Use the dataframe index as product_id
                                 'model': row.get('MODEL', 'N/A'),
                                 'body_color': row.get('BODY CLOLOR', 'N/A'),
-                                'unit_price': float(row.get('PRICE', 0)),
+                                'picture': row.get('PICTURE', ''),
+                                'price': price,
+                                'watt': row.get('WATT', ''),
+                                'size': row.get('SIZE', ''),
+                                'beam_angle': row.get('BEAM ANGLE', ''),
+                                'cut_out': row.get('CUT OUT', ''),
+                                'light_color': '',  # Can be entered separately
                                 'quantity': quantity,
+                                'discount': discount,
+                                'item_total': item_total,
+                                'unit_price': price,
                                 'discount_percent': discount,
-                                'line_total': quantity * float(row.get('PRICE', 0)) * (1 - discount/100)
+                                'line_total': item_total
                             }
                             st.session_state.quotation_items.append(item)
                             st.success(f"Added {item['model']} to quotation!")
