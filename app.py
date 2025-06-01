@@ -29,6 +29,16 @@ def main():
     if 'uploaded_images' not in st.session_state:
         st.session_state.uploaded_images = {}
     
+    # Load existing images from disk on startup
+    if os.path.exists('uploaded_images'):
+        for filename in os.listdir('uploaded_images'):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+                try:
+                    with open(f'uploaded_images/{filename}', 'rb') as f:
+                        st.session_state.uploaded_images[filename] = f.read()
+                except Exception:
+                    pass
+    
     # Sidebar for data management
     with st.sidebar:
         st.header("📊 Data Management")
@@ -53,9 +63,17 @@ def main():
         
         # Process uploaded images
         if uploaded_images:
+            # Create uploaded_images directory if it doesn't exist
+            os.makedirs('uploaded_images', exist_ok=True)
+            
             for image_file in uploaded_images:
                 image_bytes = image_file.read()
                 st.session_state.uploaded_images[image_file.name] = image_bytes
+                
+                # Save image to disk for persistence
+                with open(f'uploaded_images/{image_file.name}', 'wb') as f:
+                    f.write(image_bytes)
+            
             st.success(f"Uploaded {len(uploaded_images)} images")
         
         # Process Excel file
@@ -161,11 +179,17 @@ def main():
                             
                             # Restore images
                             st.session_state.uploaded_images = {}
+                            os.makedirs('uploaded_images', exist_ok=True)
+                            
                             for file_info in zip_file.filelist:
                                 if file_info.filename.startswith('images/') and not file_info.filename.endswith('/'):
                                     image_name = os.path.basename(file_info.filename)
                                     image_data = zip_file.read(file_info.filename)
                                     st.session_state.uploaded_images[image_name] = image_data
+                                    
+                                    # Save to disk for persistence
+                                    with open(f'uploaded_images/{image_name}', 'wb') as f:
+                                        f.write(image_data)
                             
                             if st.session_state.uploaded_images:
                                 st.success(f"Restored {len(st.session_state.uploaded_images)} images!")
@@ -190,6 +214,12 @@ def main():
             if st.session_state.get('confirm_delete', False):
                 db.clear_database()
                 st.session_state.uploaded_images = {}
+                
+                # Clear images directory
+                import shutil
+                if os.path.exists('uploaded_images'):
+                    shutil.rmtree('uploaded_images')
+                
                 st.success("All data cleared!")
                 st.session_state.confirm_delete = False
                 st.rerun()
