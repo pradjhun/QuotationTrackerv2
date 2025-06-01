@@ -984,8 +984,8 @@ def main():
                             'Cut Out': item.get('cut_out', 'N/A'),
                             'Quantity': item['quantity'],
                             'Unit Price': original_price,
-                            'Unit Price (After Discount)': f"₹{unit_price_after_discount:,.2f}",
-                            'Final Price': f"₹{final_price:,.2f}"
+                            'Project Price': unit_price_after_discount,
+                            'Final Price': final_price
                         })
                     
                     # Create DataFrame
@@ -1059,8 +1059,8 @@ def main():
                         worksheet.write(data_row, 8, row['Cut Out'], cell_format)
                         worksheet.write(data_row, 9, row['Quantity'], cell_format)
                         worksheet.write(data_row, 10, f"₹{float(row['Unit Price']):,.2f}", cell_format)  # Unit Price
-                        worksheet.write(data_row, 11, f"₹{float(row['Unit Price (After Discount)']):,.2f}", cell_format)  # Project Price
-                        worksheet.write(data_row, 12, row['Final Price'], cell_format)
+                        worksheet.write(data_row, 11, f"₹{float(row['Project Price']):,.2f}", cell_format)  # Project Price
+                        worksheet.write(data_row, 12, f"₹{float(row['Final Price']):,.2f}", cell_format)
                         
                         # Add product image if available
                         picture_filename = row['Picture']
