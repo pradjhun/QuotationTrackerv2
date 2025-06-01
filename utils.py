@@ -113,7 +113,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
     
     return formatted_df[final_order]
 
-def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
+def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str = "", quotation_date: str = "") -> bytes:
     """
     Export DataFrame to Excel format as bytes with embedded images.
     
@@ -141,6 +141,31 @@ def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
     ws = wb.active
     ws.title = "Quotation"
     
+    # Add quotation header information
+    current_row = 1
+    
+    # Title
+    title_cell = ws.cell(row=current_row, column=1, value="QUOTATION")
+    title_cell.font = Font(bold=True, size=16)
+    title_cell.alignment = Alignment(horizontal='center')
+    ws.merge_cells(f'A{current_row}:F{current_row}')
+    current_row += 2
+    
+    # Customer name
+    if customer_name:
+        customer_cell = ws.cell(row=current_row, column=1, value=f"Customer: {customer_name}")
+        customer_cell.font = Font(bold=True)
+        current_row += 1
+    
+    # Date
+    if quotation_date:
+        date_cell = ws.cell(row=current_row, column=1, value=f"Date: {quotation_date}")
+        date_cell.font = Font(bold=True)
+        current_row += 1
+    
+    # Add some spacing
+    current_row += 1
+    
     # Add headers with styling
     headers = list(df_export.columns)
     
@@ -150,16 +175,20 @@ def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
         headers[picture_idx] = 'Product Image'
     
     # Write headers
+    header_row = current_row
     for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_num, value=header)
+        cell = ws.cell(row=header_row, column=col_num, value=header)
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal='center')
+    
+    current_row += 1
     
     # Set row height for image display
     image_row_height = 80
     
     # Add data rows
-    for row_idx, (_, row) in enumerate(df_export.iterrows(), start=2):
+    for data_idx, (_, row) in enumerate(df_export.iterrows()):
+        row_idx = current_row + data_idx
         ws.row_dimensions[row_idx].height = image_row_height
         
         for col_idx, (col_name, value) in enumerate(row.items(), start=1):
@@ -192,13 +221,44 @@ def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
                 # Regular cell value
                 ws.cell(row=row_idx, column=col_idx, value=value)
     
+    # Calculate final row after data
+    final_data_row = current_row + len(df_export) - 1
+    
+    # Add Terms & Conditions section
+    terms_start_row = final_data_row + 3
+    terms_title_cell = ws.cell(row=terms_start_row, column=1, value="TERMS & CONDITIONS")
+    terms_title_cell.font = Font(bold=True, size=14)
+    terms_title_cell.alignment = Alignment(horizontal='center')
+    ws.merge_cells(f'A{terms_start_row}:F{terms_start_row}')
+    
+    # Terms & Conditions content
+    terms_conditions = [
+        "GST & IGST ARE 18%",
+        "100% ADVANCE PAYMENT",
+        "PRICING ON FOB KOLKATA BASIS",
+        "TWO YEAR WARRANTY ON LED",
+        "TWO YEAR WARRANTY ON DRIVER",
+        "SPOT LIGHTS ARE IP GRADED & DUSTPROOF",
+        "DELIVERY WILL TAKE MINIMUM 10-15 WORKING DAYS FROM THE DATE OF CONFIRMED P.O AND ADVANCE PAYMENT.",
+        "DELIVERY CHARGE EXTRA AS PER ACTUAL",
+        "FOR EVERY BILLING GST NO OR PANCARD NO IS MANDATORY",
+        "STRICTLY GOODS ONCE SOLD WILL NOT BE TAKEN BACK AS PER GST"
+    ]
+    
+    # Add each term
+    for i, term in enumerate(terms_conditions):
+        term_row = terms_start_row + i + 2
+        term_cell = ws.cell(row=term_row, column=1, value=f"• {term}")
+        term_cell.font = Font(size=10)
+        ws.merge_cells(f'A{term_row}:F{term_row}')
+    
     # Auto-adjust column widths
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter
         for cell in col:
             try:
-                if len(str(cell.value)) > max_length:
+                if cell.value and len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             except:
                 pass

@@ -774,8 +774,12 @@ def main():
                         items = db.get_quotation_items(quotation['quotation_id'])
                         
                         if not items.empty:
-                            # Export to Excel
-                            excel_data = export_to_excel(items)
+                            # Get quotation date and customer name
+                            customer_name = quotation['customer_name']
+                            quotation_date = quotation.get('quotation_date', quotation.get('created_date', ''))
+                            
+                            # Export to Excel with customer info
+                            excel_data = export_to_excel(items, customer_name=customer_name, quotation_date=quotation_date)
                             st.download_button(
                                 label="📥 Excel",
                                 data=excel_data,
