@@ -373,7 +373,7 @@ def main():
         with search_col1:
             product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.", key="browse_products_search")
         with search_col2:
-            if st.button("🔍 Search Products"):
+            if st.button("🔍 Search Products", key="browse_search_btn"):
                 st.rerun()
         
         # Get available products
@@ -772,7 +772,7 @@ def main():
         with search_col1:
             product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.", key="create_quotation_product_search")
         with search_col2:
-            if st.button("🔍 Search Products"):
+            if st.button("🔍 Search Products", key="create_quotation_search_btn"):
                 st.rerun()
         
         # Get available products
