@@ -113,7 +113,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
     
     return formatted_df[final_order]
 
-def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str = "", quotation_date: str = "") -> bytes:
+def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str = "", customer_address: str = "", quotation_date: str = "") -> bytes:
     """
     Export DataFrame to Excel format as bytes with embedded images.
     
@@ -155,6 +155,12 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     if customer_name:
         customer_cell = ws.cell(row=current_row, column=1, value=f"Customer: {customer_name}")
         customer_cell.font = Font(bold=True)
+        current_row += 1
+    
+    # Customer address (below customer name)
+    if customer_address:
+        address_cell = ws.cell(row=current_row, column=1, value=f"Address: {customer_address}")
+        address_cell.font = Font(bold=True)
         current_row += 1
     
     # Date

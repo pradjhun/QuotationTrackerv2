@@ -69,6 +69,12 @@ class DatabaseManager:
                 )
             ''')
             
+            # Check if customer_address column exists and add it if missing (migration)
+            cursor.execute("PRAGMA table_info(generated_quotations)")
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'customer_address' not in columns:
+                cursor.execute('ALTER TABLE generated_quotations ADD COLUMN customer_address TEXT')
+            
             conn.commit()
             conn.close()
         except Exception as e:
