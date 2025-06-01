@@ -710,6 +710,11 @@ def main():
                             value=0.0, 
                             key=f"disc_{idx}"
                         )
+                        light_color = st.text_input(
+                            "Light Color", 
+                            placeholder="e.g., Warm White, Cool White",
+                            key=f"light_{idx}"
+                        )
                     
                     with col3:
                         if st.button("➕ Add", key=f"add_{idx}"):
@@ -726,7 +731,7 @@ def main():
                                 'size': row.get('SIZE', ''),
                                 'beam_angle': row.get('BEAM ANGLE', ''),
                                 'cut_out': row.get('CUT OUT', ''),
-                                'light_color': '',  # Can be entered separately
+                                'light_color': light_color,
                                 'quantity': quantity,
                                 'discount': discount,
                                 'item_total': item_total,
