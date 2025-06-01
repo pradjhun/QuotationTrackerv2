@@ -793,13 +793,13 @@ def main():
                 
                 # Display products for selection
                 for idx, product in filtered_products.iterrows():
-                    with st.expander(f"📱 {product['MODEL']} - ₹{product['PRICE']:,.2f}"):
+                    with st.expander(f"📱 {product['MODEL']} - ₹{float(product['PRICE']):,.2f}"):
                         col1, col2, col3 = st.columns([2, 2, 1])
                         
                         with col1:
                             st.write(f"**Model:** {product['MODEL']}")
                             st.write(f"**Body Color:** {product.get('BODY CLOLOR', 'N/A')}")
-                            st.write(f"**Price:** ₹{product['PRICE']:,.2f}")
+                            st.write(f"**Price:** ₹{float(product['PRICE']):,.2f}")
                             st.write(f"**Watt:** {product.get('WATT', 'N/A')}")
                         
                         with col2:
