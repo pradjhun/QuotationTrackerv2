@@ -253,17 +253,23 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         ws.merge_cells(f'A{term_row}:F{term_row}')
     
     # Auto-adjust column widths
-    for col in ws.columns:
+    for col_idx in range(1, len(headers) + 1):
         max_length = 0
-        column = col[0].column_letter
-        for cell in col:
-            try:
-                if cell.value and len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = min(max_length + 2, 50)
-        ws.column_dimensions[column].width = adjusted_width
+        column_letter = chr(64 + col_idx)  # A, B, C, etc.
+        
+        # Check all cells in this column for content length
+        for row in ws.iter_rows(min_col=col_idx, max_col=col_idx):
+            for cell in row:
+                if hasattr(cell, 'value') and cell.value:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+        
+        # Set minimum width and apply
+        adjusted_width = max(min(max_length + 2, 50), 12)
+        ws.column_dimensions[column_letter].width = adjusted_width
     
     # Save to bytes
     output = io.BytesIO()
