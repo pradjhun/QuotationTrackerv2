@@ -253,8 +253,20 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
                 else:
                     ws.cell(row=row_idx, column=col_idx, value="No image")
             else:
-                # Regular cell value
-                ws.cell(row=row_idx, column=col_idx, value=value)
+                # Check if this is a price or item_total column to add Rupee symbol
+                header_name = headers[col_idx - 1].lower() if col_idx - 1 < len(headers) else ""
+                if any(price_word in header_name for price_word in ['price', 'total', 'amount', 'cost']):
+                    try:
+                        # Try to format as currency with Rupee symbol
+                        numeric_value = float(value)
+                        formatted_value = f"₹{numeric_value:,.2f}"
+                        ws.cell(row=row_idx, column=col_idx, value=formatted_value)
+                    except (ValueError, TypeError):
+                        # If not numeric, use original value
+                        ws.cell(row=row_idx, column=col_idx, value=value)
+                else:
+                    # Regular cell value
+                    ws.cell(row=row_idx, column=col_idx, value=value)
     
     # Calculate final row after data
     final_data_row = current_row + len(df_export) - 1
