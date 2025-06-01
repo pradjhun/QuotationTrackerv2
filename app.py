@@ -746,6 +746,41 @@ def main():
                     worksheet.write(total_row, 10, 'GRAND TOTAL:', table_header_format)
                     worksheet.write(total_row, 11, f"₹{quotation_details['final_amount']:,.2f}", table_header_format)
                     
+                    # Add Terms & Conditions
+                    terms_start_row = total_row + 3
+                    
+                    # Terms & Conditions header
+                    terms_header_format = workbook.add_format({
+                        'bold': True,
+                        'font_size': 14,
+                        'align': 'left',
+                        'underline': True
+                    })
+                    
+                    terms_format = workbook.add_format({
+                        'font_size': 10,
+                        'align': 'left',
+                        'text_wrap': True
+                    })
+                    
+                    worksheet.write(terms_start_row, 0, 'TERMS & CONDITIONS', terms_header_format)
+                    
+                    terms_conditions = [
+                        'GST & IGST ARE 18%',
+                        '100% ADVANCE PAYMENT',
+                        'PRICING ON FOB KOLKATA BASIS',
+                        'TWO YEAR WARRANTY ON LED',
+                        'TWO YEAR WARRANTY ON DRIVER',
+                        'SPOT LIGHTS ARE IP GRADED & DUSTPROOF',
+                        'DELIVERY WILL TAKE MINIMUM 10-15 WORKING DAYS FROM THE DATE OF CONFIRMED P.O AND ADVANCE PAYMENT.',
+                        'DELIVERY CHARGE EXTRA AS PER ACTUAL',
+                        'FOR EVERY BILLING GST NO OR PANCARD NO IS MANDATORY',
+                        'STRICTLY GOODS ONCE SOLD WILL NOT BE TAKEN BACK AS PER GST'
+                    ]
+                    
+                    for i, term in enumerate(terms_conditions):
+                        worksheet.write(terms_start_row + 2 + i, 0, f"{i+1}. {term}", terms_format)
+                    
                     # Adjust column widths
                     worksheet.set_column('A:A', 8)   # Sr. No.
                     worksheet.set_column('B:B', 25)  # Picture (wider for images)
