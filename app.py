@@ -456,7 +456,7 @@ def main():
                 st.warning("Click again to confirm deletion")
     
     # Main content area with tabs based on user role
-    if user_info['role'] == 'admin':
+    if user_info and user_info['role'] == 'admin':
         tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
             "🔍 Browse Products", 
             "➕ Add Product", 
@@ -606,7 +606,221 @@ def main():
         else:
             st.info("No records found. Please upload data or adjust your search criteria.")
     
-    with tab2:
+    # Add Product tab (Admin only)
+    if tab2 is not None:
+        with tab2:
+            st.header("➕ Add Product")
+            
+            # Check if user has admin permissions
+            if not (user_info and user_info['role'] == 'admin'):
+                st.error("Access denied. Admin privileges required.")
+                return
+            
+            st.subheader("📝 Product Information")
+            
+            with st.form("add_product_form"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    model = st.text_input("Model", placeholder="Enter product model")
+                    body_color = st.text_input("Body Color", placeholder="Enter body color")
+                    price = st.number_input("Price (₹)", min_value=0.0, step=0.01, format="%.2f")
+                    watt = st.text_input("Watt", placeholder="Enter wattage")
+                
+                with col2:
+                    size = st.text_input("Size", placeholder="Enter size")
+                    beam_angle = st.text_input("Beam Angle", placeholder="Enter beam angle")
+                    cut_out = st.text_input("Cut Out", placeholder="Enter cut out")
+                    
+                    # Image upload
+                    uploaded_image = st.file_uploader(
+                        "Product Image", 
+                        type=['png', 'jpg', 'jpeg'],
+                        help="Upload product image (PNG, JPG, JPEG)"
+                    )
+                
+                submitted = st.form_submit_button("➕ Add Product", type="primary")
+                
+                if submitted:
+                    if model and body_color and price > 0:
+                        # Handle image upload
+                        picture_filename = ""
+                        if uploaded_image is not None:
+                            # Create uploaded_images directory if it doesn't exist
+                            os.makedirs('uploaded_images', exist_ok=True)
+                            
+                            # Generate unique filename
+                            file_extension = uploaded_image.name.split('.')[-1].lower()
+                            picture_filename = f"{model}_{body_color}.{file_extension}".replace(" ", "_")
+                            
+                            # Save image to disk
+                            with open(f'uploaded_images/{picture_filename}', 'wb') as f:
+                                f.write(uploaded_image.getbuffer())
+                            
+                            # Store in session state
+                            st.session_state.uploaded_images[picture_filename] = uploaded_image.getbuffer()
+                        
+                        # Create product data
+                        product_data = {
+                            'MODEL': model,
+                            'BODY CLOLOR': body_color,
+                            'PICTURE': picture_filename,
+                            'PRICE': price,
+                            'WATT': watt,
+                            'SIZE': size,
+                            'BEAM ANGLE': beam_angle,
+                            'CUT OUT': cut_out
+                        }
+                        
+                        # Add to database
+                        df_new = pd.DataFrame([product_data])
+                        success, message = db.import_data(df_new)
+                        
+                        if success:
+                            st.success(f"✅ Product '{model}' added successfully!")
+                            st.rerun()
+                        else:
+                            st.error(f"❌ Failed to add product: {message}")
+                    else:
+                        st.error("Please fill in all required fields (Model, Body Color, and Price).")
+
+    # Edit Product tab (Admin only)
+    if tab3 is not None:
+        with tab3:
+            st.header("✏️ Edit Product")
+            
+            # Check if user has admin permissions
+            if not (user_info and user_info['role'] == 'admin'):
+                st.error("Access denied. Admin privileges required.")
+                return
+            
+            # Get all products for editing
+            all_products = db.get_all_data()
+            
+            if not all_products.empty:
+                st.subheader("Select Product to Edit")
+                
+                # Create a product selector
+                product_options = []
+                for idx, row in all_products.iterrows():
+                    model = row.get('MODEL', 'Unknown')
+                    color = row.get('BODY CLOLOR', 'Unknown')
+                    price = row.get('PRICE', 'Unknown')
+                    product_options.append(f"{model} - {color} (₹{price})")
+                
+                selected_product_idx = st.selectbox(
+                    "Choose product to edit:",
+                    range(len(product_options)),
+                    format_func=lambda x: product_options[x]
+                )
+                
+                if selected_product_idx is not None:
+                    selected_row = all_products.iloc[selected_product_idx]
+                    
+                    st.subheader("📝 Edit Product Information")
+                    
+                    with st.form("edit_product_form"):
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            model = st.text_input("Model", value=str(selected_row.get('MODEL', '')))
+                            body_color = st.text_input("Body Color", value=str(selected_row.get('BODY CLOLOR', '')))
+                            price = st.number_input("Price (₹)", value=float(selected_row.get('PRICE', 0)), min_value=0.0, step=0.01, format="%.2f")
+                            watt = st.text_input("Watt", value=str(selected_row.get('WATT', '')))
+                        
+                        with col2:
+                            size = st.text_input("Size", value=str(selected_row.get('SIZE', '')))
+                            beam_angle = st.text_input("Beam Angle", value=str(selected_row.get('BEAM ANGLE', '')))
+                            cut_out = st.text_input("Cut Out", value=str(selected_row.get('CUT OUT', '')))
+                            
+                            # Image upload
+                            current_image = selected_row.get('PICTURE', '')
+                            if current_image:
+                                st.write(f"Current image: {current_image}")
+                            
+                            uploaded_image = st.file_uploader(
+                                "Replace Product Image (optional)", 
+                                type=['png', 'jpg', 'jpeg'],
+                                help="Upload new product image (PNG, JPG, JPEG)"
+                            )
+                        
+                        col_submit, col_delete = st.columns([1, 1])
+                        
+                        with col_submit:
+                            submitted = st.form_submit_button("💾 Update Product", type="primary")
+                        
+                        with col_delete:
+                            delete_clicked = st.form_submit_button("🗑️ Delete Product", type="secondary")
+                        
+                        if submitted:
+                            if model and body_color and price > 0:
+                                # Handle image upload
+                                picture_filename = current_image
+                                if uploaded_image is not None:
+                                    # Create uploaded_images directory if it doesn't exist
+                                    os.makedirs('uploaded_images', exist_ok=True)
+                                    
+                                    # Generate unique filename
+                                    file_extension = uploaded_image.name.split('.')[-1].lower()
+                                    picture_filename = f"{model}_{body_color}.{file_extension}".replace(" ", "_")
+                                    
+                                    # Save image to disk
+                                    with open(f'uploaded_images/{picture_filename}', 'wb') as f:
+                                        f.write(uploaded_image.getbuffer())
+                                    
+                                    # Store in session state
+                                    st.session_state.uploaded_images[picture_filename] = uploaded_image.getbuffer()
+                                
+                                # Update product data
+                                # Note: For simplicity, we'll delete and re-add the product
+                                # In a production environment, you'd want proper UPDATE functionality
+                                
+                                # Delete old record first
+                                db.clear_database()
+                                
+                                # Create updated dataframe
+                                all_products.iloc[selected_product_idx] = [
+                                    selected_row.iloc[0] if 'S.NO' in all_products.columns else len(all_products) + 1,
+                                    model,
+                                    body_color,
+                                    picture_filename,
+                                    price,
+                                    watt,
+                                    size,
+                                    beam_angle,
+                                    cut_out
+                                ]
+                                
+                                # Re-import all data
+                                success, message = db.import_data(all_products)
+                                
+                                if success:
+                                    st.success(f"✅ Product '{model}' updated successfully!")
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ Failed to update product: {message}")
+                            else:
+                                st.error("Please fill in all required fields (Model, Body Color, and Price).")
+                        
+                        if delete_clicked:
+                            # Delete the selected product
+                            updated_products = all_products.drop(all_products.index[selected_product_idx]).reset_index(drop=True)
+                            
+                            db.clear_database()
+                            if not updated_products.empty:
+                                success, message = db.import_data(updated_products)
+                                if success:
+                                    st.success(f"✅ Product deleted successfully!")
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ Failed to delete product: {message}")
+                            else:
+                                st.success("✅ Product deleted successfully!")
+                                st.rerun()
+            else:
+                st.info("No products available to edit. Please add some products first.")
+
+    with tab4:
         st.header("📋 Create Quotation")
         
         # Initialize quotation session state
