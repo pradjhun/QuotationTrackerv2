@@ -295,14 +295,20 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
                         formatted_value = f"₹{numeric_value:,.2f}"
                         cell = ws.cell(row=row_idx, column=col_idx, value=formatted_value)
                         cell.border = thin_border
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
                     except (ValueError, TypeError):
                         # If not numeric, use original value
                         cell = ws.cell(row=row_idx, column=col_idx, value=value)
                         cell.border = thin_border
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
                 else:
                     # Regular cell value
                     cell = ws.cell(row=row_idx, column=col_idx, value=value)
                     cell.border = thin_border
+                    
+                    # Center align model column for better appearance
+                    if header_name == "model":
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
     
     # Calculate final row after data
     final_data_row = current_row + len(df_export) - 1
