@@ -64,9 +64,9 @@ def main():
         
         if total_records > 0:
             # Database backup section
-            st.subheader("💾 Database Backup")
+            st.subheader("💾 Database Backup & Restore")
             
-            backup_col1, backup_col2 = st.columns(2)
+            backup_col1, backup_col2, backup_col3 = st.columns(3)
             with backup_col1:
                 if st.button("📤 Backup", help="Download current database with images as ZIP"):
                     all_data = db.get_all_data()
@@ -119,6 +119,10 @@ To restore:
                         st.warning("No data to backup")
             
             with backup_col2:
+                if st.button("📥 Restore", help="Restore database from backup file"):
+                    st.session_state.show_restore = True
+                    
+            with backup_col3:
                 if st.button("🗑️ Clear All", type="secondary"):
                     if st.session_state.get('confirm_clear', False):
                         db.clear_database()
@@ -130,6 +134,144 @@ To restore:
                     else:
                         st.session_state['confirm_clear'] = True
                         st.warning("Click again to confirm clearing all data")
+                        
+        # Restore section
+        if st.session_state.get('show_restore', False):
+            st.subheader("📥 Restore Database")
+            
+            restore_tab1, restore_tab2 = st.tabs(["📄 From Excel File", "📦 From ZIP Backup"])
+            
+            with restore_tab1:
+                st.info("Upload an Excel file to restore data only (without images)")
+                restore_file = st.file_uploader(
+                    "Choose Excel backup file", 
+                    type=['xlsx', 'xls'],
+                    key="restore_excel"
+                )
+                
+                if restore_file is not None:
+                    try:
+                        df = pd.read_excel(restore_file)
+                        
+                        # Validate structure
+                        is_valid, message = validate_excel_structure(df)
+                        if is_valid:
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                if st.button("🔄 Replace All Data", key="replace_data"):
+                                    db.clear_database()
+                                    success, msg = db.import_data(df)
+                                    if success:
+                                        st.success(f"✅ Database restored! {msg}")
+                                        st.session_state.show_restore = False
+                                        st.rerun()
+                                    else:
+                                        st.error(f"❌ {msg}")
+                                        
+                            with col2:
+                                if st.button("➕ Add to Existing Data", key="add_data"):
+                                    success, msg = db.import_data(df)
+                                    if success:
+                                        st.success(f"✅ Data added! {msg}")
+                                        st.session_state.show_restore = False
+                                        st.rerun()
+                                    else:
+                                        st.error(f"❌ {msg}")
+                                        
+                            st.dataframe(df.head(), use_container_width=True)
+                        else:
+                            st.error(f"❌ {message}")
+                    except Exception as e:
+                        st.error(f"❌ Error reading file: {str(e)}")
+            
+            with restore_tab2:
+                st.info("Upload a ZIP backup file to restore both data and images")
+                zip_file = st.file_uploader(
+                    "Choose ZIP backup file", 
+                    type=['zip'],
+                    key="restore_zip"
+                )
+                
+                if zip_file is not None:
+                    try:
+                        import zipfile
+                        from io import BytesIO
+                        
+                        with zipfile.ZipFile(BytesIO(zip_file.read())) as zip_ref:
+                            # List contents
+                            file_list = zip_ref.namelist()
+                            st.write("📁 Backup contents:")
+                            for file in file_list:
+                                st.write(f"  - {file}")
+                            
+                            # Find Excel file
+                            excel_files = [f for f in file_list if f.endswith(('.xlsx', '.xls'))]
+                            if excel_files:
+                                excel_file = excel_files[0]
+                                
+                                # Read Excel data
+                                with zip_ref.open(excel_file) as excel_data:
+                                    df = pd.read_excel(excel_data)
+                                
+                                # Validate structure
+                                is_valid, message = validate_excel_structure(df)
+                                if is_valid:
+                                    col1, col2 = st.columns(2)
+                                    with col1:
+                                        if st.button("🔄 Replace All Data", key="replace_zip_data"):
+                                            db.clear_database()
+                                            success, msg = db.import_data(df)
+                                            if success:
+                                                # Extract images
+                                                image_files = [f for f in file_list if f.startswith('images/') and f.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'))]
+                                                if image_files:
+                                                    os.makedirs('uploaded_images', exist_ok=True)
+                                                    for img_file in image_files:
+                                                        with zip_ref.open(img_file) as img_data:
+                                                            img_name = os.path.basename(img_file)
+                                                            with open(f'uploaded_images/{img_name}', 'wb') as f:
+                                                                f.write(img_data.read())
+                                                    st.success(f"✅ Database and {len(image_files)} images restored! {msg}")
+                                                else:
+                                                    st.success(f"✅ Database restored! {msg}")
+                                                st.session_state.show_restore = False
+                                                st.rerun()
+                                            else:
+                                                st.error(f"❌ {msg}")
+                                    
+                                    with col2:
+                                        if st.button("➕ Add to Existing Data", key="add_zip_data"):
+                                            success, msg = db.import_data(df)
+                                            if success:
+                                                # Extract images
+                                                image_files = [f for f in file_list if f.startswith('images/') and f.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'))]
+                                                if image_files:
+                                                    os.makedirs('uploaded_images', exist_ok=True)
+                                                    for img_file in image_files:
+                                                        with zip_ref.open(img_file) as img_data:
+                                                            img_name = os.path.basename(img_file)
+                                                            if not os.path.exists(f'uploaded_images/{img_name}'):
+                                                                with open(f'uploaded_images/{img_name}', 'wb') as f:
+                                                                    f.write(img_data.read())
+                                                    st.success(f"✅ Data and {len(image_files)} new images added! {msg}")
+                                                else:
+                                                    st.success(f"✅ Data added! {msg}")
+                                                st.session_state.show_restore = False
+                                                st.rerun()
+                                            else:
+                                                st.error(f"❌ {msg}")
+                                    
+                                    st.dataframe(df.head(), use_container_width=True)
+                                else:
+                                    st.error(f"❌ {message}")
+                            else:
+                                st.error("❌ No Excel file found in backup")
+                    except Exception as e:
+                        st.error(f"❌ Error processing ZIP file: {str(e)}")
+            
+            if st.button("❌ Cancel Restore"):
+                st.session_state.show_restore = False
+                st.rerun()
     
     # Main content area
     if db.get_total_records() == 0:
