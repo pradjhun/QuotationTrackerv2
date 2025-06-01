@@ -1,0 +1,33 @@
+Missing Submit Button
+
+This form has no submit button, which means that user interactions will never be sent to your Streamlit app.
+
+To create a submit button, use the st.form_submit_button() function.
+
+For more information, refer to the documentation for forms.
+
+streamlit.errors.StreamlitInvalidFormCallbackError: Within a form, callbacks can only be defined on st.form_submit_button. Defining callbacks on other widgets inside a form is not allowed.
+
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 645, in code_to_exec
+    exec(code, module.__dict__)
+File "/home/runner/workspace/app.py", line 563, in <module>
+    main()
+File "/home/runner/workspace/app.py", line 393, in main
+    new_sl_no = st.number_input("SL.NO", min_value=1, value=db.get_total_records() + 1, key="new_sl_no", on_change=lambda: st.rerun())
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/metrics_util.py", line 444, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/widgets/number_input.py", line 344, in number_input
+    return self._number_input(
+           ^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/widgets/number_input.py", line 385, in _number_input
+    check_widget_policies(
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/lib/policies.py", line 176, in check_widget_policies
+    check_callback_rules(dg, on_change)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/lib/policies.py", line 53, in check_callback_rules
+    raise StreamlitInvalidFormCallbackError()

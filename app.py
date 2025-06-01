@@ -390,7 +390,7 @@ def main():
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                new_sl_no = st.number_input("SL.NO", min_value=1, value=db.get_total_records() + 1, key="new_sl_no", on_change=lambda: st.rerun())
+                new_sl_no = st.number_input("SL.NO", min_value=1, value=db.get_total_records() + 1, key="new_sl_no")
                 new_module = st.text_input("Module")
                 new_body_colour = st.text_input("Body Colour")
             
