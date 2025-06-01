@@ -114,7 +114,12 @@ To restore:
                             )
                             
                             image_count = len(st.session_state.get('uploaded_images', {}))
+                            image_names = list(st.session_state.get('uploaded_images', {}).keys())
                             st.success(f"Backup ready! Includes {len(all_data)} records and {image_count} images")
+                            if image_names:
+                                st.info(f"Images included: {', '.join(image_names)}")
+                            else:
+                                st.warning("No images found in session. Upload images using the sidebar to include them in backups.")
                         except Exception as e:
                             st.error(f"Error creating backup: {str(e)}")
                     else:
