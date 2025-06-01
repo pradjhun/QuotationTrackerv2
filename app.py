@@ -271,7 +271,19 @@ def main():
                     new_sno = st.text_input("S.NO", placeholder="Enter serial number")
                     new_model = st.text_input("MODEL", placeholder="Enter model name")
                     new_body_color = st.text_input("BODY COLOR", placeholder="Enter body color")
-                    new_picture = st.text_input("PICTURE", placeholder="Enter picture filename")
+                    
+                    # Picture upload
+                    uploaded_picture = st.file_uploader(
+                        "Upload Product Picture", 
+                        type=['jpg', 'jpeg', 'png', 'gif'],
+                        help="Upload product image (JPG, PNG, GIF)"
+                    )
+                    
+                    # Option to enter filename manually if no upload
+                    if not uploaded_picture:
+                        new_picture = st.text_input("Or enter picture filename", placeholder="picture.jpg")
+                    else:
+                        new_picture = uploaded_picture.name
                 
                 with col2:
                     new_price = st.number_input("PRICE", min_value=0.0, format="%.2f")
@@ -284,11 +296,28 @@ def main():
                 
                 if submitted:
                     if new_model and new_body_color:  # Basic validation
+                        # Handle image upload
+                        picture_filename = new_picture
+                        if uploaded_picture:
+                            # Create uploaded_images directory if it doesn't exist
+                            import os
+                            upload_dir = "uploaded_images"
+                            if not os.path.exists(upload_dir):
+                                os.makedirs(upload_dir)
+                            
+                            # Save the uploaded file
+                            file_path = os.path.join(upload_dir, uploaded_picture.name)
+                            with open(file_path, "wb") as f:
+                                f.write(uploaded_picture.getbuffer())
+                            
+                            picture_filename = uploaded_picture.name
+                            st.success(f"Image uploaded successfully: {picture_filename}")
+                        
                         new_product = {
                             'S.NO': new_sno if new_sno else '',
                             'MODEL': new_model,
                             'BODY CLOLOR': new_body_color,
-                            'PICTURE': new_picture,
+                            'PICTURE': picture_filename,
                             'PRICE': new_price,
                             'WATT': new_watt,
                             'SIZE': new_size,
@@ -346,7 +375,23 @@ def main():
                                 edit_sno = st.text_input("S.NO", value=str(selected_product.get('S.NO', '')), key="edit_sno")
                                 edit_model = st.text_input("MODEL", value=str(selected_product.get('MODEL', '')), key="edit_model")
                                 edit_body_color = st.text_input("BODY COLOR", value=str(selected_product.get('BODY CLOLOR', '')), key="edit_body_color")
-                                edit_picture = st.text_input("PICTURE", value=str(selected_product.get('PICTURE', '')), key="edit_picture")
+                                
+                                # Picture upload for editing
+                                current_picture = str(selected_product.get('PICTURE', ''))
+                                st.write(f"Current picture: {current_picture}")
+                                
+                                uploaded_picture_edit = st.file_uploader(
+                                    "Upload New Picture", 
+                                    type=['jpg', 'jpeg', 'png', 'gif'],
+                                    help="Upload new product image (JPG, PNG, GIF)",
+                                    key="edit_picture_upload"
+                                )
+                                
+                                # Option to keep current picture or change filename
+                                if uploaded_picture_edit:
+                                    edit_picture = uploaded_picture_edit.name
+                                else:
+                                    edit_picture = st.text_input("Or edit picture filename", value=current_picture, key="edit_picture")
                             
                             with col2:
                                 try:
@@ -369,12 +414,29 @@ def main():
                             
                             if update_submitted:
                                 if edit_model and edit_body_color:
+                                    # Handle image upload for editing
+                                    picture_filename = edit_picture
+                                    if uploaded_picture_edit:
+                                        # Create uploaded_images directory if it doesn't exist
+                                        import os
+                                        upload_dir = "uploaded_images"
+                                        if not os.path.exists(upload_dir):
+                                            os.makedirs(upload_dir)
+                                        
+                                        # Save the uploaded file
+                                        file_path = os.path.join(upload_dir, uploaded_picture_edit.name)
+                                        with open(file_path, "wb") as f:
+                                            f.write(uploaded_picture_edit.getbuffer())
+                                        
+                                        picture_filename = uploaded_picture_edit.name
+                                        st.success(f"New image uploaded: {picture_filename}")
+                                    
                                     # Update product in database
                                     updated_product = {
                                         'S.NO': edit_sno,
                                         'MODEL': edit_model,
                                         'BODY CLOLOR': edit_body_color,
-                                        'PICTURE': edit_picture,
+                                        'PICTURE': picture_filename,
                                         'PRICE': edit_price,
                                         'WATT': edit_watt,
                                         'SIZE': edit_size,
