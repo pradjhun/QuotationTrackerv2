@@ -371,7 +371,7 @@ def main():
         # Search for products
         search_col1, search_col2 = st.columns([3, 1])
         with search_col1:
-            product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.")
+            product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.", key="browse_products_search")
         with search_col2:
             if st.button("🔍 Search Products"):
                 st.rerun()
@@ -698,9 +698,9 @@ def main():
                         edit_watt = st.text_input("WATT", value=str(selected_product.get('WATT', '')), key="edit_watt")
                     
                     with col2:
-                        edit_size = st.text_input("SIZE", value=str(selected_product.get('SIZE', '')))
-                        edit_beam_angle = st.text_input("BEAM ANGLE", value=str(selected_product.get('BEAM ANGLE', '')))
-                        edit_cut_out = st.text_input("CUT OUT", value=str(selected_product.get('CUT OUT', '')))
+                        edit_size = st.text_input("SIZE", value=str(selected_product.get('SIZE', '')), key="edit_size")
+                        edit_beam_angle = st.text_input("BEAM ANGLE", value=str(selected_product.get('BEAM ANGLE', '')), key="edit_beam_angle")
+                        edit_cut_out = st.text_input("CUT OUT", value=str(selected_product.get('CUT OUT', '')), key="edit_cut_out")
                         
                         # Show current image if exists
                         current_picture = selected_product.get('PICTURE', '')
@@ -770,7 +770,7 @@ def main():
         # Search for products
         search_col1, search_col2 = st.columns([3, 1])
         with search_col1:
-            product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.")
+            product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.", key="create_quotation_product_search")
         with search_col2:
             if st.button("🔍 Search Products"):
                 st.rerun()
