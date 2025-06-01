@@ -395,7 +395,7 @@ def main():
                 new_body_colour = st.text_input("Body Colour")
             
             with col2:
-                # Picture upload for new record
+                # Picture upload for new record with preview
                 new_uploaded_picture = st.file_uploader("Upload Picture", type=['png', 'jpg', 'jpeg', 'gif'], key="add_new_picture")
                 new_picture_filename = ""
                 if new_uploaded_picture:
@@ -405,6 +405,8 @@ def main():
                         st.session_state.uploaded_images = {}
                     st.session_state.uploaded_images[new_uploaded_picture.name] = new_uploaded_picture.getvalue()
                     st.success(f"Picture uploaded: {new_uploaded_picture.name}")
+                    # Show preview of uploaded image
+                    st.image(new_uploaded_picture, caption=f"Preview: {new_uploaded_picture.name}", width=150)
                 
                 new_price = st.text_input("Price")
                 new_watt = st.text_input("Watt")
@@ -487,9 +489,34 @@ def main():
                         edit_body_colour = st.text_input("Body Colour", value=form_data['body_colour'])
                     
                     with col2:
-                        # Picture upload for edit
+                        # Picture upload for edit with preview
                         current_picture = str(record_to_edit.get('PICTURE', ''))
-                        st.write(f"Current picture: {current_picture}")
+                        st.write(f"**Current Picture:** {current_picture}")
+                        
+                        # Show current image preview if available
+                        if current_picture and current_picture not in ['', 'nan', 'None']:
+                            if 'uploaded_images' in st.session_state and current_picture in st.session_state.uploaded_images:
+                                st.image(st.session_state.uploaded_images[current_picture], 
+                                        caption=f"Current: {current_picture}", 
+                                        width=150)
+                            else:
+                                # Try partial match for current image
+                                image_found = False
+                                if 'uploaded_images' in st.session_state:
+                                    base_name = current_picture.split('.')[0] if '.' in current_picture else current_picture
+                                    for img_name in st.session_state.uploaded_images.keys():
+                                        if base_name.lower() in img_name.lower() or img_name.split('.')[0].lower() == base_name.lower():
+                                            st.image(st.session_state.uploaded_images[img_name], 
+                                                    caption=f"Current: {img_name}", 
+                                                    width=150)
+                                            image_found = True
+                                            break
+                                
+                                if not image_found:
+                                    st.info("Current image not available in preview")
+                        else:
+                            st.info("No current image")
+                        
                         edit_uploaded_picture = st.file_uploader("Upload New Picture (optional)", type=['png', 'jpg', 'jpeg', 'gif'], key="edit_picture")
                         edit_picture_filename = current_picture
                         if edit_uploaded_picture:
@@ -499,6 +526,8 @@ def main():
                                 st.session_state.uploaded_images = {}
                             st.session_state.uploaded_images[edit_uploaded_picture.name] = edit_uploaded_picture.getvalue()
                             st.success(f"New picture uploaded: {edit_uploaded_picture.name}")
+                            # Show preview of new image
+                            st.image(edit_uploaded_picture, caption=f"New: {edit_uploaded_picture.name}", width=150)
                         
                         edit_price = st.text_input("Price", value=form_data['price'])
                         edit_watt = st.text_input("Watt", value=form_data['watt'])
