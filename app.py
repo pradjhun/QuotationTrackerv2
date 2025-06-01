@@ -472,8 +472,8 @@ def main():
                     
                     st.session_state[f'edit_form_{selected_idx}'] = {
                         'sl_no': float(record_to_edit.get('SL.NO', 1)),
-                        'module': clean_value(record_to_edit.get('MODULE')),
-                        'body_colour': clean_value(record_to_edit.get('BODY COLOUR')),
+                        'module': clean_value(record_to_edit.get('MODEL')),  # Fixed: MODEL not MODULE
+                        'body_colour': clean_value(record_to_edit.get('BODY CLOLOR')),  # Fixed: BODY CLOLOR not BODY COLOUR
                         'price': clean_value(record_to_edit.get('PRICE')),
                         'watt': clean_value(record_to_edit.get('WATT')),
                         'size': clean_value(record_to_edit.get('SIZE')),
@@ -488,8 +488,8 @@ def main():
                     
                     # Debug output to see what values we're working with
                     st.write("**Debug - Raw values from DataFrame:**")
-                    st.write(f"Raw MODULE: {repr(record_to_edit.get('MODULE'))}")
-                    st.write(f"Raw BODY COLOUR: {repr(record_to_edit.get('BODY COLOUR'))}")
+                    st.write(f"Raw MODEL: {repr(record_to_edit.get('MODEL'))}")
+                    st.write(f"Raw BODY CLOLOR: {repr(record_to_edit.get('BODY CLOLOR'))}")
                     st.write(f"Raw PRICE: {repr(record_to_edit.get('PRICE'))}")
                     
                     st.write("**Debug - Cleaned values being loaded into form:**")
