@@ -99,10 +99,10 @@ def main():
                     st.success(f"Picture uploaded: {uploaded_picture.name}")
                 
                 single_colour = st.text_input("Single Colour Option")
-                watt = st.number_input("Watt", min_value=0.0, step=0.1)
+                watt = st.text_input("Watt")
             
             with col3:
-                size = st.number_input("Size", min_value=0.0, step=0.1)
+                size = st.text_input("Size")
                 beam_angle = st.text_input("Beam Angle")
                 cut_out = st.text_input("Cut Out")
             
@@ -407,10 +407,10 @@ def main():
                     st.success(f"Picture uploaded: {new_uploaded_picture.name}")
                 
                 new_single_colour = st.text_input("Single Colour Option")
-                new_watt = st.number_input("Watt", min_value=0.0, step=0.1)
+                new_watt = st.text_input("Watt")
             
             with col3:
-                new_size = st.number_input("Size", min_value=0.0, step=0.1)
+                new_size = st.text_input("Size")
                 new_beam_angle = st.text_input("Beam Angle")
                 new_cut_out = st.text_input("Cut Out")
             
@@ -480,10 +480,10 @@ def main():
                             st.success(f"New picture uploaded: {edit_uploaded_picture.name}")
                         
                         edit_single_colour = st.text_input("Single Colour Option", value=str(record_to_edit.get('SINGLE COLOUR OPTION', '')))
-                        edit_watt = st.number_input("Watt", value=float(record_to_edit.get('WATT', 0)))
+                        edit_watt = st.text_input("Watt", value=str(record_to_edit.get('WATT', '')))
                     
                     with col3:
-                        edit_size = st.number_input("Size", value=float(record_to_edit.get('SIZE', 0)))
+                        edit_size = st.text_input("Size", value=str(record_to_edit.get('SIZE', '')))
                         edit_beam_angle = st.text_input("Beam Angle", value=str(record_to_edit.get('BEAM ANGLE', '')))
                         edit_cut_out = st.text_input("Cut Out", value=str(record_to_edit.get('CUT OUT', '')))
                     
