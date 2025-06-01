@@ -229,10 +229,48 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     
     # Calculate totals from the data
     subtotal = 0
-    if 'Final Price' in df_export.columns:
-        subtotal = df_export['Final Price'].sum()
-    elif 'FINAL PRICE' in df_export.columns:
-        subtotal = df_export['FINAL PRICE'].sum()
+    
+    # Debug: print available columns
+    print(f"Available columns: {list(df_export.columns)}")
+    
+    # Try different possible column names for final price (case insensitive)
+    price_columns = ['final_price', 'Final Price', 'FINAL PRICE', 'final_amount', 'Final Amount', 'FINAL AMOUNT', 
+                    'total_price', 'Total Price', 'TOTAL PRICE', 'price', 'Price', 'PRICE',
+                    'amount', 'Amount', 'AMOUNT']
+    
+    for col in price_columns:
+        # Check both exact match and case-insensitive match
+        matching_cols = [c for c in df_export.columns if c.lower() == col.lower()]
+        if matching_cols:
+            actual_col = matching_cols[0]
+            try:
+                # Convert to numeric and sum, handling any non-numeric values
+                numeric_values = pd.to_numeric(df_export[actual_col], errors='coerce').fillna(0)
+                subtotal = numeric_values.sum()
+                print(f"Using column '{actual_col}' for subtotal calculation: {subtotal}")
+                if subtotal > 0:
+                    break
+            except Exception as e:
+                print(f"Error calculating from column '{actual_col}': {e}")
+                continue
+    
+    # If no price column found, try to calculate from quantity and unit price
+    if subtotal == 0:
+        print("No price column found, trying to calculate from quantity * unit_price")
+        try:
+            qty_cols = [c for c in df_export.columns if 'quantity' in c.lower() or 'qty' in c.lower()]
+            price_cols = [c for c in df_export.columns if 'unit' in c.lower() and 'price' in c.lower()]
+            
+            if qty_cols and price_cols:
+                qty_col = qty_cols[0]
+                price_col = price_cols[0]
+                quantities = pd.to_numeric(df_export[qty_col], errors='coerce').fillna(0)
+                unit_prices = pd.to_numeric(df_export[price_col], errors='coerce').fillna(0)
+                subtotal = (quantities * unit_prices).sum()
+                print(f"Calculated subtotal from {qty_col} * {price_col}: {subtotal}")
+        except Exception as e:
+            print(f"Error calculating from quantity * unit_price: {e}")
+            pass
     
     gst_amount = subtotal * 0.18  # 18% GST
     grand_total = subtotal + gst_amount
