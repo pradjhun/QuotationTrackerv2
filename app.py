@@ -662,7 +662,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            customer_name = st.text_input("Customer Name", placeholder="Enter customer name")
+            customer_name = st.text_input("Organization Name", placeholder="Enter organization name")
         
         with col2:
             customer_address = st.text_area("Customer Address", placeholder="Enter customer address", height=100)

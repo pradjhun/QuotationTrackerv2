@@ -151,22 +151,51 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     ws.merge_cells(f'A{current_row}:F{current_row}')
     current_row += 2
     
-    # Customer name
+    # Organization Name
     if customer_name:
-        customer_cell = ws.cell(row=current_row, column=1, value=f"Customer: {customer_name}")
-        customer_cell.font = Font(bold=True)
+        # Label cell
+        org_label_cell = ws.cell(row=current_row, column=1, value="Organization Name:")
+        org_label_cell.font = Font(bold=True, size=12)
+        
+        # Customer name cell (merge if needed)
+        org_name_cell = ws.cell(row=current_row, column=2, value=customer_name)
+        org_name_cell.font = Font(size=12)
+        
+        # Merge cells B to F for organization name if it's long
+        if len(customer_name) > 20:
+            ws.merge_cells(f'B{current_row}:F{current_row}')
+        
         current_row += 1
     
-    # Customer address (below customer name)
+    # Customer Address
     if customer_address:
-        address_cell = ws.cell(row=current_row, column=1, value=f"Address: {customer_address}")
-        address_cell.font = Font(bold=True)
+        # Label cell
+        addr_label_cell = ws.cell(row=current_row, column=1, value="Address:")
+        addr_label_cell.font = Font(bold=True, size=12)
+        
+        # Address cell (merge for more space)
+        addr_cell = ws.cell(row=current_row, column=2, value=customer_address)
+        addr_cell.font = Font(size=12)
+        addr_cell.alignment = Alignment(wrap_text=True, vertical='top')
+        
+        # Always merge cells B to F for address
+        ws.merge_cells(f'B{current_row}:F{current_row}')
+        
+        # Increase row height for address
+        ws.row_dimensions[current_row].height = 40
+        
         current_row += 1
     
     # Date
     if quotation_date:
-        date_cell = ws.cell(row=current_row, column=1, value=f"Date: {quotation_date}")
-        date_cell.font = Font(bold=True)
+        # Label cell
+        date_label_cell = ws.cell(row=current_row, column=1, value="Date:")
+        date_label_cell.font = Font(bold=True, size=12)
+        
+        # Date cell
+        date_cell = ws.cell(row=current_row, column=2, value=quotation_date)
+        date_cell.font = Font(size=12)
+        
         current_row += 1
     
     # Add some spacing
