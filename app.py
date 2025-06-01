@@ -62,15 +62,48 @@ def main():
         st.metric("Total Records", total_records)
         
         if total_records > 0:
-            if st.button("Clear Database", type="secondary"):
-                if st.session_state.get('confirm_clear', False):
-                    db.clear_database()
-                    st.success("Database cleared successfully!")
-                    st.session_state['confirm_clear'] = False
-                    st.rerun()
-                else:
-                    st.session_state['confirm_clear'] = True
-                    st.warning("Click again to confirm clearing the database")
+            # Database backup section
+            st.subheader("💾 Database Backup")
+            
+            backup_col1, backup_col2 = st.columns(2)
+            with backup_col1:
+                if st.button("📤 Backup", help="Download current database as Excel"):
+                    all_data = db.get_all_data()
+                    if not all_data.empty:
+                        try:
+                            # Create backup file
+                            output = io.BytesIO()
+                            timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
+                            
+                            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                                all_data.to_excel(writer, sheet_name='Database_Backup', index=False)
+                            
+                            output.seek(0)
+                            
+                            st.download_button(
+                                label="Download Backup",
+                                data=output.getvalue(),
+                                file_name=f"database_backup_{timestamp}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            )
+                            st.success("Backup ready for download!")
+                        except Exception as e:
+                            st.error(f"Error creating backup: {str(e)}")
+                    else:
+                        st.warning("No data to backup")
+            
+            with backup_col2:
+                if st.button("🗑️ Clear All", type="secondary"):
+                    if st.session_state.get('confirm_clear', False):
+                        db.clear_database()
+                        if 'uploaded_images' in st.session_state:
+                            st.session_state.uploaded_images = {}
+                        st.success("Database cleared successfully!")
+                        st.session_state['confirm_clear'] = False
+                        st.rerun()
+                    else:
+                        st.session_state['confirm_clear'] = True
+                        st.warning("Click again to confirm clearing all data")
     
     # Main content area
     if db.get_total_records() == 0:
@@ -569,21 +602,36 @@ def main():
                             updated_data = all_data.copy()
                             # Convert values to appropriate types to avoid dtype warnings
                             update_values = {
-                                'SL.NO': str(edit_sl_no),
-                                'MODULE': str(edit_module),
-                                'BODY COLOUR': str(edit_body_colour),
+                                'SL.NO': edit_sl_no,  # Keep as number
+                                'MODEL': str(edit_module),  # Fixed column name
+                                'BODY CLOLOR': str(edit_body_colour),  # Fixed column name
                                 'PICTURE': str(edit_picture_filename),
-                                'PRICE': str(edit_price),
+                                'PRICE': edit_price,  # Keep original type
                                 'WATT': str(edit_watt),
                                 'SIZE': str(edit_size),
                                 'BEAM ANGLE': str(edit_beam_angle),
                                 'CUT OUT': str(edit_cut_out)
                             }
                             
-                            # Update each column individually to avoid dtype conflicts
+                            # Update each column individually with proper type conversion
                             for col, value in update_values.items():
                                 if col in updated_data.columns:
-                                    updated_data.loc[updated_data.index[selected_idx], col] = value
+                                    # Convert to the same dtype as the existing column
+                                    original_dtype = updated_data[col].dtype
+                                    if original_dtype in ['int64', 'int32']:
+                                        try:
+                                            converted_value = int(float(str(value))) if str(value) else 0
+                                        except:
+                                            converted_value = str(value)
+                                    elif original_dtype in ['float64', 'float32']:
+                                        try:
+                                            converted_value = float(str(value)) if str(value) else 0.0
+                                        except:
+                                            converted_value = str(value)
+                                    else:
+                                        converted_value = str(value)
+                                    
+                                    updated_data.at[updated_data.index[selected_idx], col] = converted_value
                             
                             # Clear and reimport updated data
                             db.clear_database()
