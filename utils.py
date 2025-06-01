@@ -224,8 +224,48 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     # Calculate final row after data
     final_data_row = current_row + len(df_export) - 1
     
+    # Add totals section
+    totals_start_row = final_data_row + 2
+    
+    # Calculate totals from the data
+    subtotal = 0
+    if 'Final Price' in df_export.columns:
+        subtotal = df_export['Final Price'].sum()
+    elif 'FINAL PRICE' in df_export.columns:
+        subtotal = df_export['FINAL PRICE'].sum()
+    
+    gst_amount = subtotal * 0.18  # 18% GST
+    grand_total = subtotal + gst_amount
+    
+    # Add subtotal row
+    subtotal_cell = ws.cell(row=totals_start_row, column=len(headers)-1, value="Subtotal:")
+    subtotal_cell.font = Font(bold=True)
+    subtotal_cell.alignment = Alignment(horizontal='right')
+    
+    subtotal_value_cell = ws.cell(row=totals_start_row, column=len(headers), value=f"₹{subtotal:,.2f}")
+    subtotal_value_cell.font = Font(bold=True)
+    subtotal_value_cell.alignment = Alignment(horizontal='right')
+    
+    # Add GST row
+    gst_cell = ws.cell(row=totals_start_row + 1, column=len(headers)-1, value="GST (18%):")
+    gst_cell.font = Font(bold=True)
+    gst_cell.alignment = Alignment(horizontal='right')
+    
+    gst_value_cell = ws.cell(row=totals_start_row + 1, column=len(headers), value=f"₹{gst_amount:,.2f}")
+    gst_value_cell.font = Font(bold=True)
+    gst_value_cell.alignment = Alignment(horizontal='right')
+    
+    # Add grand total row
+    total_cell = ws.cell(row=totals_start_row + 2, column=len(headers)-1, value="Grand Total:")
+    total_cell.font = Font(bold=True, size=12)
+    total_cell.alignment = Alignment(horizontal='right')
+    
+    total_value_cell = ws.cell(row=totals_start_row + 2, column=len(headers), value=f"₹{grand_total:,.2f}")
+    total_value_cell.font = Font(bold=True, size=12)
+    total_value_cell.alignment = Alignment(horizontal='right')
+    
     # Add Terms & Conditions section
-    terms_start_row = final_data_row + 3
+    terms_start_row = totals_start_row + 5
     terms_title_cell = ws.cell(row=terms_start_row, column=1, value="TERMS & CONDITIONS")
     terms_title_cell.font = Font(bold=True, size=14)
     terms_title_cell.alignment = Alignment(horizontal='center')
