@@ -87,7 +87,17 @@ def main():
                 body_colour = st.text_input("Body Colour")
             
             with col2:
-                picture = st.text_input("Picture (filename)")
+                # Picture upload
+                uploaded_picture = st.file_uploader("Upload Picture", type=['png', 'jpg', 'jpeg', 'gif'], key="manual_picture")
+                picture_filename = ""
+                if uploaded_picture:
+                    picture_filename = uploaded_picture.name
+                    # Store in session state
+                    if 'uploaded_images' not in st.session_state:
+                        st.session_state.uploaded_images = {}
+                    st.session_state.uploaded_images[uploaded_picture.name] = uploaded_picture.getvalue()
+                    st.success(f"Picture uploaded: {uploaded_picture.name}")
+                
                 single_colour = st.text_input("Single Colour Option")
                 watt = st.number_input("Watt", min_value=0.0, step=0.1)
             
@@ -101,7 +111,7 @@ def main():
                     'SL.NO': sl_no,
                     'MODULE': module,
                     'BODY COLOUR': body_colour,
-                    'PICTURE': picture,
+                    'PICTURE': picture_filename,
                     'SINGLE COLOUR OPTION': single_colour,
                     'WATT': watt,
                     'SIZE': size,
@@ -385,7 +395,17 @@ def main():
                 new_body_colour = st.text_input("Body Colour")
             
             with col2:
-                new_picture = st.text_input("Picture (filename)")
+                # Picture upload for new record
+                new_uploaded_picture = st.file_uploader("Upload Picture", type=['png', 'jpg', 'jpeg', 'gif'], key="add_new_picture")
+                new_picture_filename = ""
+                if new_uploaded_picture:
+                    new_picture_filename = new_uploaded_picture.name
+                    # Store in session state
+                    if 'uploaded_images' not in st.session_state:
+                        st.session_state.uploaded_images = {}
+                    st.session_state.uploaded_images[new_uploaded_picture.name] = new_uploaded_picture.getvalue()
+                    st.success(f"Picture uploaded: {new_uploaded_picture.name}")
+                
                 new_single_colour = st.text_input("Single Colour Option")
                 new_watt = st.number_input("Watt", min_value=0.0, step=0.1)
             
@@ -399,7 +419,7 @@ def main():
                     'SL.NO': new_sl_no,
                     'MODULE': new_module,
                     'BODY COLOUR': new_body_colour,
-                    'PICTURE': new_picture,
+                    'PICTURE': new_picture_filename,
                     'SINGLE COLOUR OPTION': new_single_colour,
                     'WATT': new_watt,
                     'SIZE': new_size,
@@ -446,7 +466,19 @@ def main():
                         edit_body_colour = st.text_input("Body Colour", value=str(record_to_edit.get('BODY COLOUR', '')))
                     
                     with col2:
-                        edit_picture = st.text_input("Picture", value=str(record_to_edit.get('PICTURE', '')))
+                        # Picture upload for edit
+                        current_picture = str(record_to_edit.get('PICTURE', ''))
+                        st.write(f"Current picture: {current_picture}")
+                        edit_uploaded_picture = st.file_uploader("Upload New Picture (optional)", type=['png', 'jpg', 'jpeg', 'gif'], key="edit_picture")
+                        edit_picture_filename = current_picture
+                        if edit_uploaded_picture:
+                            edit_picture_filename = edit_uploaded_picture.name
+                            # Store in session state
+                            if 'uploaded_images' not in st.session_state:
+                                st.session_state.uploaded_images = {}
+                            st.session_state.uploaded_images[edit_uploaded_picture.name] = edit_uploaded_picture.getvalue()
+                            st.success(f"New picture uploaded: {edit_uploaded_picture.name}")
+                        
                         edit_single_colour = st.text_input("Single Colour Option", value=str(record_to_edit.get('SINGLE COLOUR OPTION', '')))
                         edit_watt = st.number_input("Watt", value=float(record_to_edit.get('WATT', 0)))
                     
@@ -462,7 +494,7 @@ def main():
                             'SL.NO': edit_sl_no,
                             'MODULE': edit_module,
                             'BODY COLOUR': edit_body_colour,
-                            'PICTURE': edit_picture,
+                            'PICTURE': edit_picture_filename,
                             'SINGLE COLOUR OPTION': edit_single_colour,
                             'WATT': edit_watt,
                             'SIZE': edit_size,
