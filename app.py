@@ -763,7 +763,8 @@ def main():
                         'text_wrap': True
                     })
                     
-                    worksheet.write(terms_start_row, 0, 'TERMS & CONDITIONS', terms_header_format)
+                    # Merge cells for the terms header to span across multiple columns
+                    worksheet.merge_range(terms_start_row, 0, terms_start_row, 11, 'TERMS & CONDITIONS', terms_header_format)
                     
                     terms_conditions = [
                         'GST & IGST ARE 18%',
@@ -778,8 +779,9 @@ def main():
                         'STRICTLY GOODS ONCE SOLD WILL NOT BE TAKEN BACK AS PER GST'
                     ]
                     
+                    # Write each term spanning multiple columns for better readability
                     for i, term in enumerate(terms_conditions):
-                        worksheet.write(terms_start_row + 2 + i, 0, f"{i+1}. {term}", terms_format)
+                        worksheet.merge_range(terms_start_row + 2 + i, 0, terms_start_row + 2 + i, 11, f"{i+1}. {term}", terms_format)
                     
                     # Adjust column widths
                     worksheet.set_column('A:A', 8)   # Sr. No.
