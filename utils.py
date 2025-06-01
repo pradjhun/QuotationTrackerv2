@@ -218,17 +218,32 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     # Add headers with styling
     headers = list(df_export.columns)
     
-    # Replace 'picture' column header if it exists
-    if 'picture' in [h.lower() for h in headers]:
-        picture_idx = next(i for i, h in enumerate(headers) if h.lower() == 'picture')
-        headers[picture_idx] = 'Product Image'
+    # Replace column headers for better formatting
+    header_replacements = {
+        'picture': 'Product Image',
+        'id': 'Product No'
+    }
     
-    # Write headers
+    for i, header in enumerate(headers):
+        for old_name, new_name in header_replacements.items():
+            if header.lower() == old_name:
+                headers[i] = new_name
+    
+    # Create border style
+    thin_border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Write headers with borders
     header_row = current_row
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=header_row, column=col_num, value=header)
         cell.font = Font(bold=True)
         cell.alignment = Alignment(horizontal='center')
+        cell.border = thin_border
     
     current_row += 1
     
@@ -258,14 +273,18 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
                             ws.add_image(img)
                             
                             # Set cell value to empty since we have image
-                            ws.cell(row=row_idx, column=col_idx, value="")
+                            cell = ws.cell(row=row_idx, column=col_idx, value="")
+                            cell.border = thin_border
                         except Exception:
                             # If image fails to load, show filename
-                            ws.cell(row=row_idx, column=col_idx, value=str(value))
+                            cell = ws.cell(row=row_idx, column=col_idx, value=str(value))
+                            cell.border = thin_border
                     else:
-                        ws.cell(row=row_idx, column=col_idx, value="Image not found")
+                        cell = ws.cell(row=row_idx, column=col_idx, value="Image not found")
+                        cell.border = thin_border
                 else:
-                    ws.cell(row=row_idx, column=col_idx, value="No image")
+                    cell = ws.cell(row=row_idx, column=col_idx, value="No image")
+                    cell.border = thin_border
             else:
                 # Check if this is a price or item_total column to add Rupee symbol
                 header_name = headers[col_idx - 1].lower() if col_idx - 1 < len(headers) else ""
@@ -274,16 +293,41 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
                         # Try to format as currency with Rupee symbol
                         numeric_value = float(value)
                         formatted_value = f"₹{numeric_value:,.2f}"
-                        ws.cell(row=row_idx, column=col_idx, value=formatted_value)
+                        cell = ws.cell(row=row_idx, column=col_idx, value=formatted_value)
+                        cell.border = thin_border
                     except (ValueError, TypeError):
                         # If not numeric, use original value
-                        ws.cell(row=row_idx, column=col_idx, value=value)
+                        cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                        cell.border = thin_border
                 else:
                     # Regular cell value
-                    ws.cell(row=row_idx, column=col_idx, value=value)
+                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
+                    cell.border = thin_border
     
     # Calculate final row after data
     final_data_row = current_row + len(df_export) - 1
+    
+    # Set column widths for better appearance
+    column_widths = {
+        'Product No': 12,      # Reduced width for Product No
+        'model': 20,
+        'body_color': 15,
+        'Product Image': 15,
+        'price': 12,
+        'watt': 10,
+        'size': 12,
+        'beam_angle': 15,
+        'cut_out': 12,
+        'light_color': 15,
+        'quantity': 10,
+        'discount': 10,
+        'item_total': 15
+    }
+    
+    # Apply column widths
+    for col_num, header in enumerate(headers, 1):
+        width = column_widths.get(header, 15)  # Default width 15
+        ws.column_dimensions[ws.cell(row=1, column=col_num).column_letter].width = width
     
     # Add totals section
     totals_start_row = final_data_row + 2
