@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import zipfile
 from database_manager import DatabaseManager
 from utils import validate_excel_structure, format_dataframe_display
 
@@ -67,26 +68,51 @@ def main():
             
             backup_col1, backup_col2 = st.columns(2)
             with backup_col1:
-                if st.button("📤 Backup", help="Download current database as Excel"):
+                if st.button("📤 Backup", help="Download current database with images as ZIP"):
                     all_data = db.get_all_data()
                     if not all_data.empty:
                         try:
-                            # Create backup file
-                            output = io.BytesIO()
+                            # Create backup ZIP file with data and images
+                            zip_buffer = io.BytesIO()
                             timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
                             
-                            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                                all_data.to_excel(writer, sheet_name='Database_Backup', index=False)
+                            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                                # Add Excel data file
+                                excel_buffer = io.BytesIO()
+                                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                                    all_data.to_excel(writer, sheet_name='Database_Backup', index=False)
+                                excel_buffer.seek(0)
+                                zip_file.writestr(f"database_backup_{timestamp}.xlsx", excel_buffer.getvalue())
+                                
+                                # Add images if they exist
+                                if 'uploaded_images' in st.session_state and st.session_state.uploaded_images:
+                                    for img_name, img_data in st.session_state.uploaded_images.items():
+                                        zip_file.writestr(f"images/{img_name}", img_data)
+                                    
+                                    # Create a readme file
+                                    readme_content = f"""Database Backup - {timestamp}
+                                    
+This backup contains:
+1. database_backup_{timestamp}.xlsx - Your quotation data
+2. images/ folder - All uploaded product images
+
+To restore:
+1. Upload the Excel file to import your data
+2. Upload the images from the images folder to restore pictures
+"""
+                                    zip_file.writestr("README.txt", readme_content)
                             
-                            output.seek(0)
+                            zip_buffer.seek(0)
                             
                             st.download_button(
-                                label="Download Backup",
-                                data=output.getvalue(),
-                                file_name=f"database_backup_{timestamp}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                label="Download Backup (ZIP)",
+                                data=zip_buffer.getvalue(),
+                                file_name=f"database_backup_{timestamp}.zip",
+                                mime="application/zip"
                             )
-                            st.success("Backup ready for download!")
+                            
+                            image_count = len(st.session_state.get('uploaded_images', {}))
+                            st.success(f"Backup ready! Includes {len(all_data)} records and {image_count} images")
                         except Exception as e:
                             st.error(f"Error creating backup: {str(e)}")
                     else:
