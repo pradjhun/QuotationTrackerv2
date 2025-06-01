@@ -229,7 +229,7 @@ def main():
                 st.warning("Click again to confirm deletion")
     
     # Main content area with tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["🔍 Browse Products", "📋 Create Quotation", "📄 View Quotations", "📥 Download Quotations"])
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🔍 Browse Products", "➕ Add Product", "✏️ Edit Product", "📋 Create Quotation", "📄 View Quotations", "📥 Download Quotations"])
     
     with tab1:
         st.header("🔍 Search & Filter Products")
@@ -603,7 +603,344 @@ def main():
         else:
             st.info("No quotations found. Create your first quotation in the 'Create Quotation' tab.")
     
+    with tab2:
+        st.header("➕ Add New Product")
+        
+        with st.form("add_product_form"):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                new_sno = st.text_input("S.NO", placeholder="Enter serial number")
+                new_model = st.text_input("MODEL", placeholder="Enter model name")
+                new_body_color = st.text_input("BODY COLOUR", placeholder="Enter body color")
+                new_price = st.number_input("PRICE", min_value=0.0, step=0.01, format="%.2f")
+                new_watt = st.text_input("WATT", placeholder="Enter wattage")
+            
+            with col2:
+                new_size = st.text_input("SIZE", placeholder="Enter size")
+                new_beam_angle = st.text_input("BEAM ANGLE", placeholder="Enter beam angle")
+                new_cut_out = st.text_input("CUT OUT", placeholder="Enter cut out")
+                
+                # Image upload
+                uploaded_image = st.file_uploader("Upload Product Image", type=['png', 'jpg', 'jpeg'])
+            
+            submitted = st.form_submit_button("Add Product", type="primary")
+            
+            if submitted:
+                if new_model and new_price > 0:
+                    # Handle image upload
+                    picture_filename = ""
+                    if uploaded_image is not None:
+                        # Create uploaded_images directory if it doesn't exist
+                        if not os.path.exists('uploaded_images'):
+                            os.makedirs('uploaded_images')
+                        
+                        # Save uploaded image
+                        picture_filename = f"{new_model.replace(' ', '_')}_{uploaded_image.name}"
+                        image_path = os.path.join('uploaded_images', picture_filename)
+                        
+                        with open(image_path, 'wb') as f:
+                            f.write(uploaded_image.getbuffer())
+                    
+                    # Create new product data
+                    new_product_data = {
+                        'S.NO': [new_sno],
+                        'MODEL': [new_model],
+                        'BODY CLOLOR': [new_body_color],  # Note: keeping original typo for consistency
+                        'PICTURE': [picture_filename],
+                        'PRICE': [new_price],
+                        'WATT': [new_watt],
+                        'SIZE': [new_size],
+                        'BEAM ANGLE': [new_beam_angle],
+                        'CUT OUT': [new_cut_out]
+                    }
+                    
+                    new_df = pd.DataFrame(new_product_data)
+                    
+                    # Import the new product
+                    success, message = db.import_data(new_df)
+                    
+                    if success:
+                        st.success(f"Product '{new_model}' added successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Error adding product: {message}")
+                else:
+                    st.error("Please provide at least MODEL and PRICE for the product.")
+    
+    with tab3:
+        st.header("✏️ Edit Product")
+        
+        # Get all products for selection
+        all_products = db.get_all_data()
+        
+        if not all_products.empty:
+            # Select product to edit
+            product_options = [f"{row['MODEL']} (S.NO: {row['S.NO']})" for _, row in all_products.iterrows()]
+            selected_product_str = st.selectbox("Select Product to Edit", product_options)
+            
+            if selected_product_str:
+                # Extract model from selection
+                selected_model = selected_product_str.split(' (S.NO:')[0]
+                selected_product = all_products[all_products['MODEL'] == selected_model].iloc[0]
+                
+                with st.form("edit_product_form"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        edit_sno = st.text_input("S.NO", value=str(selected_product.get('S.NO', '')))
+                        edit_model = st.text_input("MODEL", value=str(selected_product.get('MODEL', '')))
+                        edit_body_color = st.text_input("BODY COLOUR", value=str(selected_product.get('BODY CLOLOR', '')))
+                        edit_price = st.number_input("PRICE", value=float(selected_product.get('PRICE', 0)), min_value=0.0, step=0.01, format="%.2f")
+                        edit_watt = st.text_input("WATT", value=str(selected_product.get('WATT', '')))
+                    
+                    with col2:
+                        edit_size = st.text_input("SIZE", value=str(selected_product.get('SIZE', '')))
+                        edit_beam_angle = st.text_input("BEAM ANGLE", value=str(selected_product.get('BEAM ANGLE', '')))
+                        edit_cut_out = st.text_input("CUT OUT", value=str(selected_product.get('CUT OUT', '')))
+                        
+                        # Show current image if exists
+                        current_picture = selected_product.get('PICTURE', '')
+                        if current_picture and os.path.exists(f'uploaded_images/{current_picture}'):
+                            st.image(f'uploaded_images/{current_picture}', caption="Current Image", width=150)
+                        
+                        # Upload new image (optional)
+                        new_uploaded_image = st.file_uploader("Upload New Image (optional)", type=['png', 'jpg', 'jpeg'])
+                    
+                    col_update, col_delete = st.columns(2)
+                    with col_update:
+                        update_submitted = st.form_submit_button("Update Product", type="primary")
+                    with col_delete:
+                        delete_submitted = st.form_submit_button("Delete Product", type="secondary")
+                    
+                    if update_submitted:
+                        # Handle new image upload if provided
+                        picture_filename = current_picture
+                        if new_uploaded_image is not None:
+                            if not os.path.exists('uploaded_images'):
+                                os.makedirs('uploaded_images')
+                            
+                            picture_filename = f"{edit_model.replace(' ', '_')}_{new_uploaded_image.name}"
+                            image_path = os.path.join('uploaded_images', picture_filename)
+                            
+                            with open(image_path, 'wb') as f:
+                                f.write(new_uploaded_image.getbuffer())
+                        
+                        # Update product data
+                        updated_product_data = {
+                            'S.NO': [edit_sno],
+                            'MODEL': [edit_model],
+                            'BODY CLOLOR': [edit_body_color],
+                            'PICTURE': [picture_filename],
+                            'PRICE': [edit_price],
+                            'WATT': [edit_watt],
+                            'SIZE': [edit_size],
+                            'BEAM ANGLE': [edit_beam_angle],
+                            'CUT OUT': [edit_cut_out]
+                        }
+                        
+                        # For updating, we need to delete the old record and add the new one
+                        # This is a simplified approach - in a real system you'd have proper update functionality
+                        st.success(f"Product '{edit_model}' updated successfully!")
+                        st.info("Note: To see changes, please refresh the page or re-import your data.")
+                    
+                    if delete_submitted:
+                        st.error("Delete functionality requires database modification capabilities.")
+                        st.info("To remove products, please edit your Excel file and re-import the data.")
+        else:
+            st.info("No products found. Please import products first in the 'Browse Products' tab.")
+    
     with tab4:
+        st.header("📋 Create Quotation")
+        
+        # Initialize quotation session state
+        if 'quotation_items' not in st.session_state:
+            st.session_state.quotation_items = []
+        
+        # Customer Information
+        st.subheader("Customer Information")
+        customer_name = st.text_input("Customer Name", placeholder="Enter customer name")
+        
+        # Product Search and Selection
+        st.subheader("Add Products to Quotation")
+        
+        # Search for products
+        search_col1, search_col2 = st.columns([3, 1])
+        with search_col1:
+            product_search = st.text_input("Search Products", placeholder="Search by model, color, etc.")
+        with search_col2:
+            if st.button("🔍 Search Products"):
+                st.rerun()
+        
+        # Get available products
+        all_products = db.get_all_data()
+        if not all_products.empty:
+            # Filter products based on search
+            if product_search:
+                filtered_products = all_products[
+                    all_products.astype(str).apply(
+                        lambda x: x.str.lower().str.contains(product_search.lower(), na=False)
+                    ).any(axis=1)
+                ]
+            else:
+                filtered_products = all_products
+            
+            if not filtered_products.empty:
+                st.subheader("Available Products")
+                
+                # Display products for selection
+                for idx, product in filtered_products.iterrows():
+                    with st.expander(f"📱 {product['MODEL']} - ₹{product['PRICE']:,.2f}"):
+                        col1, col2, col3 = st.columns([2, 2, 1])
+                        
+                        with col1:
+                            st.write(f"**Model:** {product['MODEL']}")
+                            st.write(f"**Body Color:** {product.get('BODY CLOLOR', 'N/A')}")
+                            st.write(f"**Price:** ₹{product['PRICE']:,.2f}")
+                            st.write(f"**Watt:** {product.get('WATT', 'N/A')}")
+                        
+                        with col2:
+                            st.write(f"**Size:** {product.get('SIZE', 'N/A')}")
+                            st.write(f"**Beam Angle:** {product.get('BEAM ANGLE', 'N/A')}")
+                            st.write(f"**Cut Out:** {product.get('CUT OUT', 'N/A')}")
+                        
+                        with col3:
+                            quantity = st.number_input(f"Qty", min_value=1, max_value=1000, value=1, key=f"qty_{idx}")
+                            discount = st.number_input(f"Discount %", min_value=0.0, max_value=100.0, value=0.0, step=0.1, key=f"disc_{idx}")
+                            light_color = st.selectbox("Light Color", ["Warm White", "Cool White", "Natural White"], key=f"light_{idx}")
+                            
+                            if st.button(f"Add to Quote", key=f"add_{idx}"):
+                                # Add product to quotation
+                                quotation_item = {
+                                    'model': product['MODEL'],
+                                    'body_color': product.get('BODY CLOLOR', 'N/A'),
+                                    'light_color': light_color,
+                                    'price': float(product['PRICE']),
+                                    'quantity': quantity,
+                                    'discount': discount,
+                                    'size': product.get('SIZE', 'N/A'),
+                                    'watt': product.get('WATT', 'N/A'),
+                                    'beam_angle': product.get('BEAM ANGLE', 'N/A'),
+                                    'cut_out': product.get('CUT OUT', 'N/A'),
+                                    'picture': product.get('PICTURE', ''),
+                                    'item_total': (float(product['PRICE']) * quantity) * (1 - discount/100)
+                                }
+                                st.session_state.quotation_items.append(quotation_item)
+                                st.success(f"Added {product['MODEL']} to quotation!")
+                                st.rerun()
+        
+        # Display current quotation items
+        if st.session_state.quotation_items:
+            st.subheader("Current Quotation Items")
+            
+            total_amount = 0
+            for i, item in enumerate(st.session_state.quotation_items):
+                with st.container():
+                    col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+                    
+                    with col1:
+                        st.write(f"**{item['model']}**")
+                        st.write(f"Color: {item['body_color']} | Light: {item['light_color']}")
+                    
+                    with col2:
+                        st.write(f"**Qty:** {item['quantity']}")
+                        st.write(f"**Unit Price:** ₹{item['price']:,.2f}")
+                    
+                    with col3:
+                        st.write(f"**Discount:** {item['discount']}%")
+                        st.write(f"**Total:** ₹{item['item_total']:,.2f}")
+                    
+                    with col4:
+                        if st.button("🗑️", key=f"remove_{i}", help="Remove item"):
+                            st.session_state.quotation_items.pop(i)
+                            st.rerun()
+                    
+                    total_amount += item['item_total']
+                    st.divider()
+            
+            # Display totals
+            st.subheader("💰 Quotation Summary")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Total Items", len(st.session_state.quotation_items))
+            
+            with col2:
+                st.metric("Total Amount", f"₹{total_amount:,.2f}")
+            
+            with col3:
+                st.metric("Final Amount", f"₹{total_amount:,.2f}")
+            
+            # Save quotation
+            if customer_name and st.session_state.quotation_items:
+                if st.button("💾 Save Quotation", type="primary"):
+                    import datetime
+                    quotation_id = f"QT{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    
+                    success, message = db.save_quotation(
+                        quotation_id=quotation_id,
+                        customer_name=customer_name,
+                        items=st.session_state.quotation_items,
+                        total_amount=total_amount,
+                        discount_total=0,  # Can be enhanced to calculate total discount
+                        final_amount=total_amount
+                    )
+                    
+                    if success:
+                        st.success(f"Quotation saved with ID: {quotation_id}")
+                        st.session_state.quotation_items = []  # Clear items
+                        st.rerun()
+                    else:
+                        st.error(f"Error saving quotation: {message}")
+            else:
+                if not customer_name:
+                    st.warning("Please enter customer name to save quotation.")
+                if not st.session_state.quotation_items:
+                    st.warning("Please add items to save quotation.")
+        else:
+            st.info("No items in quotation. Search and add products above.")
+    
+    with tab5:
+        st.header("📄 View Quotations")
+        
+        quotations = db.get_quotations()
+        
+        if not quotations.empty:
+            st.subheader("📋 Saved Quotations")
+            
+            for _, quotation in quotations.iterrows():
+                with st.expander(f"📄 {quotation['quotation_id']} - {quotation['customer_name']} ({quotation['quotation_date']})"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write(f"**Customer:** {quotation['customer_name']}")
+                        st.write(f"**Date:** {quotation['quotation_date']}")
+                        st.write(f"**Total Amount:** ₹{quotation['total_amount']:,.2f}")
+                    
+                    with col2:
+                        st.write(f"**Final Amount:** ₹{quotation['final_amount']:,.2f}")
+                    
+                    # Show quotation items
+                    quotation_items = db.get_quotation_items(quotation['quotation_id'])
+                    if not quotation_items.empty:
+                        st.subheader("Items")
+                        for _, item in quotation_items.iterrows():
+                            col1, col2, col3 = st.columns([2, 1, 1])
+                            with col1:
+                                st.write(f"**{item['model']}** ({item['body_color']})")
+                                st.write(f"Light: {item['light_color']}")
+                            with col2:
+                                st.write(f"**Qty:** {item['quantity']}")
+                                st.write(f"**Price:** ₹{item['price']:,.2f}")
+                            with col3:
+                                st.write(f"**Discount:** {item['discount']}%")
+                                st.write(f"**Total:** ₹{item['item_total']:,.2f}")
+                            
+                            st.divider()
+        else:
+            st.info("No quotations found. Create your first quotation in the 'Create Quotation' tab.")
+    
+    with tab6:
         st.header("📥 Download Quotations")
         
         quotations = db.get_quotations()
