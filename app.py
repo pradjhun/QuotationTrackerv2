@@ -488,34 +488,43 @@ def main():
                         edit_cut_out = st.text_input("Cut Out", value=str(record_to_edit.get('CUT OUT', '')))
                     
                     if st.form_submit_button("Update Record", type="primary"):
-                        # Update the record in the database
-                        updated_data = all_data.copy()
-                        # Convert values to appropriate types to avoid dtype warnings
-                        update_values = {
-                            'SL.NO': str(edit_sl_no),
-                            'MODULE': str(edit_module),
-                            'BODY COLOUR': str(edit_body_colour),
-                            'PICTURE': str(edit_picture_filename),
-                            'PRICE': str(edit_price),
-                            'WATT': str(edit_watt),
-                            'SIZE': str(edit_size),
-                            'BEAM ANGLE': str(edit_beam_angle),
-                            'CUT OUT': str(edit_cut_out)
-                        }
-                        
-                        # Update each column individually to avoid dtype conflicts
-                        for col, value in update_values.items():
-                            if col in updated_data.columns:
-                                updated_data.loc[updated_data.index[selected_idx], col] = value
-                        
-                        # Clear and reimport updated data
-                        db.clear_database()
-                        success, message = db.import_data(updated_data)
-                        if success:
-                            st.success("Record updated successfully!")
-                            st.rerun()
+                        # Validate that edit_module has a value
+                        if not edit_module or edit_module.strip() == "":
+                            st.error("Model field cannot be empty. Please enter a model name.")
                         else:
-                            st.error(f"Error updating record: {message}")
+                            # Debug: Show what values are being captured
+                            st.write("**Values being saved:**")
+                            st.write(f"Model: '{edit_module}'")
+                            st.write(f"SL.NO: '{edit_sl_no}'")
+                            
+                            # Update the record in the database
+                            updated_data = all_data.copy()
+                            # Convert values to appropriate types to avoid dtype warnings
+                            update_values = {
+                                'SL.NO': str(edit_sl_no),
+                                'MODULE': str(edit_module),
+                                'BODY COLOUR': str(edit_body_colour),
+                                'PICTURE': str(edit_picture_filename),
+                                'PRICE': str(edit_price),
+                                'WATT': str(edit_watt),
+                                'SIZE': str(edit_size),
+                                'BEAM ANGLE': str(edit_beam_angle),
+                                'CUT OUT': str(edit_cut_out)
+                            }
+                            
+                            # Update each column individually to avoid dtype conflicts
+                            for col, value in update_values.items():
+                                if col in updated_data.columns:
+                                    updated_data.loc[updated_data.index[selected_idx], col] = value
+                            
+                            # Clear and reimport updated data
+                            db.clear_database()
+                            success, message = db.import_data(updated_data)
+                            if success:
+                                st.success("Record updated successfully!")
+                                st.rerun()
+                            else:
+                                st.error(f"Error updating record: {message}")
         else:
             st.info("No records available to edit.")
     
