@@ -1057,7 +1057,7 @@ def main():
                         worksheet.write(data_row, 7, row['Beam Angle'], cell_format)
                         worksheet.write(data_row, 8, row['Cut Out'], cell_format)
                         worksheet.write(data_row, 9, row['Quantity'], cell_format)
-                        worksheet.write(data_row, 10, f"₹{float(row['Price']):,.2f}", cell_format)  # Unit Price
+                        worksheet.write(data_row, 10, f"₹{float(row['PRICE']):,.2f}", cell_format)  # Unit Price
                         worksheet.write(data_row, 11, f"₹{float(row['Unit Price (After Discount)']):,.2f}", cell_format)  # Project Price
                         worksheet.write(data_row, 12, row['Final Price'], cell_format)
                         
