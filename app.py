@@ -618,7 +618,7 @@ def main():
             
             st.subheader("📝 Product Information")
             
-            with st.form("add_product_form"):
+            with st.form("admin_add_product_form"):
                 col1, col2 = st.columns(2)
                 
                 with col1:
@@ -719,7 +719,7 @@ def main():
                     
                     st.subheader("📝 Edit Product Information")
                     
-                    with st.form("edit_product_form"):
+                    with st.form("admin_edit_product_form"):
                         col1, col2 = st.columns(2)
                         
                         with col1:
@@ -1072,7 +1072,7 @@ def main():
     with tab2:
         st.header("➕ Add New Product")
         
-        with st.form("add_product_form"):
+        with st.form("quotation_add_product_form"):
             col1, col2 = st.columns(2)
             
             with col1:
@@ -1153,7 +1153,7 @@ def main():
                 selected_model = selected_product_str.split(' (ID:')[0]
                 selected_product = all_products[all_products['MODEL'] == selected_model].iloc[0]
                 
-                with st.form("edit_product_form"):
+                with st.form("quotation_edit_product_form"):
                     col1, col2 = st.columns(2)
                     
                     with col1:
