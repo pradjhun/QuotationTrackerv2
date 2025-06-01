@@ -678,7 +678,7 @@ def main():
             # Select product to edit
             product_options = []
             for _, row in all_products.iterrows():
-                sno = row.get('S.NO', row.get('id', 'N/A'))
+                sno = row.get('S.NO', row.get('Sr. No.', row.get('id', 'N/A')))
                 product_options.append(f"{row['MODEL']} (ID: {sno})")
             selected_product_str = st.selectbox("Select Product to Edit", product_options)
             
@@ -691,11 +691,11 @@ def main():
                     col1, col2 = st.columns(2)
                     
                     with col1:
-                        edit_sno = st.text_input("S.NO", value=str(selected_product.get('S.NO', selected_product.get('id', ''))))
-                        edit_model = st.text_input("MODEL", value=str(selected_product.get('MODEL', '')))
-                        edit_body_color = st.text_input("BODY COLOUR", value=str(selected_product.get('BODY CLOLOR', '')))
-                        edit_price = st.number_input("PRICE", value=float(selected_product.get('PRICE', 0)), min_value=0.0, step=0.01, format="%.2f")
-                        edit_watt = st.text_input("WATT", value=str(selected_product.get('WATT', '')))
+                        edit_sno = st.text_input("S.NO", value=str(selected_product.get('S.NO', selected_product.get('Sr. No.', selected_product.get('id', '')))), key="edit_sno")
+                        edit_model = st.text_input("MODEL", value=str(selected_product.get('MODEL', '')), key="edit_model")
+                        edit_body_color = st.text_input("BODY COLOUR", value=str(selected_product.get('BODY CLOLOR', '')), key="edit_body_color")
+                        edit_price = st.number_input("PRICE", value=float(selected_product.get('PRICE', 0)), min_value=0.0, step=0.01, format="%.2f", key="edit_price")
+                        edit_watt = st.text_input("WATT", value=str(selected_product.get('WATT', '')), key="edit_watt")
                     
                     with col2:
                         edit_size = st.text_input("SIZE", value=str(selected_product.get('SIZE', '')))
