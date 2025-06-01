@@ -82,7 +82,7 @@ def main():
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                sl_no = st.number_input("SL.NO", min_value=1, value=1)
+                sl_no = st.number_input("SL.NO", min_value=1, value=1, key="add_sl_no")
                 module = st.text_input("Module")
                 body_colour = st.text_input("Body Colour")
             
@@ -98,7 +98,7 @@ def main():
                     st.session_state.uploaded_images[uploaded_picture.name] = uploaded_picture.getvalue()
                     st.success(f"Picture uploaded: {uploaded_picture.name}")
                 
-                single_colour = st.text_input("Single Colour Option")
+                price = st.text_input("Price")
                 watt = st.text_input("Watt")
             
             with col3:
@@ -112,7 +112,7 @@ def main():
                     'MODULE': module,
                     'BODY COLOUR': body_colour,
                     'PICTURE': picture_filename,
-                    'SINGLE COLOUR OPTION': single_colour,
+                    'PRICE': price,
                     'WATT': watt,
                     'SIZE': size,
                     'BEAM ANGLE': beam_angle,
@@ -390,7 +390,7 @@ def main():
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                new_sl_no = st.number_input("SL.NO", min_value=1, value=db.get_total_records() + 1)
+                new_sl_no = st.number_input("SL.NO", min_value=1, value=db.get_total_records() + 1, key="new_sl_no", on_change=lambda: st.rerun())
                 new_module = st.text_input("Module")
                 new_body_colour = st.text_input("Body Colour")
             
@@ -406,7 +406,7 @@ def main():
                     st.session_state.uploaded_images[new_uploaded_picture.name] = new_uploaded_picture.getvalue()
                     st.success(f"Picture uploaded: {new_uploaded_picture.name}")
                 
-                new_single_colour = st.text_input("Single Colour Option")
+                new_price = st.text_input("Price")
                 new_watt = st.text_input("Watt")
             
             with col3:
@@ -420,7 +420,7 @@ def main():
                     'MODULE': new_module,
                     'BODY COLOUR': new_body_colour,
                     'PICTURE': new_picture_filename,
-                    'SINGLE COLOUR OPTION': new_single_colour,
+                    'PRICE': new_price,
                     'WATT': new_watt,
                     'SIZE': new_size,
                     'BEAM ANGLE': new_beam_angle,
@@ -479,7 +479,7 @@ def main():
                             st.session_state.uploaded_images[edit_uploaded_picture.name] = edit_uploaded_picture.getvalue()
                             st.success(f"New picture uploaded: {edit_uploaded_picture.name}")
                         
-                        edit_single_colour = st.text_input("Single Colour Option", value=str(record_to_edit.get('SINGLE COLOUR OPTION', '')))
+                        edit_price = st.text_input("Price", value=str(record_to_edit.get('PRICE', '')))
                         edit_watt = st.text_input("Watt", value=str(record_to_edit.get('WATT', '')))
                     
                     with col3:
@@ -495,7 +495,7 @@ def main():
                             'MODULE': edit_module,
                             'BODY COLOUR': edit_body_colour,
                             'PICTURE': edit_picture_filename,
-                            'SINGLE COLOUR OPTION': edit_single_colour,
+                            'PRICE': edit_price,
                             'WATT': edit_watt,
                             'SIZE': edit_size,
                             'BEAM ANGLE': edit_beam_angle,
