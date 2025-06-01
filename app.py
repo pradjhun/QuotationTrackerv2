@@ -5,6 +5,7 @@ import io
 import os
 from io import BytesIO
 from database_manager import DatabaseManager
+from auth_manager import AuthManager
 from utils import validate_excel_structure, format_dataframe_display, export_to_excel, clean_search_term
 from typing import Dict, Any
 
@@ -13,6 +14,204 @@ def init_database():
     db = DatabaseManager()
     return db
 
+def init_auth():
+    """Initialize the authentication manager."""
+    if 'auth' not in st.session_state:
+        st.session_state.auth = AuthManager()
+
+def check_authentication():
+    """Check if user is authenticated and return user info."""
+    if 'session_token' in st.session_state:
+        auth = st.session_state.auth
+        is_valid, user_info = auth.validate_session(st.session_state.session_token)
+        if is_valid:
+            return True, user_info
+        else:
+            # Invalid session, clear it
+            if 'session_token' in st.session_state:
+                del st.session_state.session_token
+            if 'user_info' in st.session_state:
+                del st.session_state.user_info
+    return False, None
+
+def login_page():
+    """Display login page."""
+    st.title("🔐 Quotation Management System")
+    st.markdown("### Please Login to Continue")
+    
+    # Display default credentials info
+    st.info("**Default Admin Credentials:**\nUsername: admin\nPassword: admin123")
+    
+    with st.form("login_form"):
+        username = st.text_input("Username", placeholder="Enter your username")
+        password = st.text_input("Password", type="password", placeholder="Enter your password")
+        
+        submitted = st.form_submit_button("🔓 Login", type="primary")
+        
+        if submitted:
+            if username and password:
+                auth = st.session_state.auth
+                success, user_info = auth.authenticate(username, password)
+                
+                if success:
+                    # Create session
+                    session_token = auth.create_session(username)
+                    if session_token:
+                        st.session_state.session_token = session_token
+                        st.session_state.user_info = user_info
+                        st.success(f"Welcome, {user_info['username']}!")
+                        st.rerun()
+                    else:
+                        st.error("Failed to create session. Please try again.")
+                else:
+                    st.error("Invalid username or password.")
+            else:
+                st.error("Please enter both username and password.")
+
+def logout():
+    """Handle user logout."""
+    if 'session_token' in st.session_state:
+        auth = st.session_state.auth
+        auth.logout(st.session_state.session_token)
+        del st.session_state.session_token
+    
+    if 'user_info' in st.session_state:
+        del st.session_state.user_info
+    
+    st.rerun()
+
+def has_permission(required_role: str, user_role: str) -> bool:
+    """Check if user has required permission."""
+    if required_role == 'admin':
+        return user_role == 'admin'
+    elif required_role == 'user':
+        return user_role in ['admin', 'user']
+    return False
+
+def admin_panel():
+    """Admin panel for user management."""
+    st.header("👥 Admin Panel - User Management")
+    
+    auth = st.session_state.auth
+    
+    # Create tabs for admin functions
+    admin_tab1, admin_tab2, admin_tab3 = st.tabs(["👤 Create User", "📋 Manage Users", "🔑 Change Password"])
+    
+    with admin_tab1:
+        st.subheader("Create New User")
+        
+        with st.form("create_user_form"):
+            new_username = st.text_input("Username", placeholder="Enter username (min 3 characters)")
+            new_password = st.text_input("Password", type="password", placeholder="Enter password (min 6 characters)")
+            new_role = st.selectbox("Role", ["user", "admin"])
+            
+            create_submitted = st.form_submit_button("➕ Create User", type="primary")
+            
+            if create_submitted:
+                if new_username and new_password:
+                    success, message = auth.create_user(
+                        new_username, 
+                        new_password, 
+                        new_role, 
+                        st.session_state.user_info['username']
+                    )
+                    
+                    if success:
+                        st.success(message)
+                    else:
+                        st.error(message)
+                else:
+                    st.error("Please fill in all fields.")
+    
+    with admin_tab2:
+        st.subheader("Manage Existing Users")
+        
+        users = auth.get_all_users()
+        
+        if users:
+            for user in users:
+                with st.expander(f"👤 {user['username']} ({user['role']})"):
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.write(f"**Role:** {user['role']}")
+                        st.write(f"**Status:** {'Active' if user['is_active'] else 'Inactive'}")
+                        st.write(f"**Created:** {user['created_at']}")
+                        st.write(f"**Last Login:** {user['last_login'] or 'Never'}")
+                    
+                    with col2:
+                        # Role change
+                        current_role = user['role']
+                        new_role = st.selectbox(
+                            "Change Role", 
+                            ["admin", "user"], 
+                            index=0 if current_role == "admin" else 1,
+                            key=f"role_{user['username']}"
+                        )
+                        
+                        if st.button(f"Update Role", key=f"update_role_{user['username']}"):
+                            if new_role != current_role:
+                                success, message = auth.change_user_role(user['username'], new_role)
+                                if success:
+                                    st.success(message)
+                                    st.rerun()
+                                else:
+                                    st.error(message)
+                    
+                    with col3:
+                        # Status toggle
+                        current_status = user['is_active']
+                        if st.button(
+                            f"{'Deactivate' if current_status else 'Activate'}", 
+                            key=f"toggle_{user['username']}"
+                        ):
+                            success, message = auth.update_user_status(user['username'], not current_status)
+                            if success:
+                                st.success(message)
+                                st.rerun()
+                            else:
+                                st.error(message)
+                        
+                        # Delete user
+                        if user['username'] != st.session_state.user_info['username']:
+                            if st.button(f"🗑️ Delete", key=f"delete_{user['username']}", type="secondary"):
+                                success, message = auth.delete_user(user['username'])
+                                if success:
+                                    st.success(message)
+                                    st.rerun()
+                                else:
+                                    st.error(message)
+        else:
+            st.info("No users found.")
+    
+    with admin_tab3:
+        st.subheader("Change Your Password")
+        
+        with st.form("change_password_form"):
+            current_password = st.text_input("Current Password", type="password")
+            new_password = st.text_input("New Password", type="password", placeholder="Enter new password (min 6 characters)")
+            confirm_password = st.text_input("Confirm New Password", type="password")
+            
+            change_submitted = st.form_submit_button("🔑 Change Password", type="primary")
+            
+            if change_submitted:
+                if current_password and new_password and confirm_password:
+                    if new_password != confirm_password:
+                        st.error("New passwords do not match.")
+                    else:
+                        success, message = auth.change_password(
+                            st.session_state.user_info['username'],
+                            current_password,
+                            new_password
+                        )
+                        
+                        if success:
+                            st.success(message)
+                        else:
+                            st.error(message)
+                else:
+                    st.error("Please fill in all fields.")
+
 def main():
     st.set_page_config(
         page_title="Quotation Management System",
@@ -20,8 +219,36 @@ def main():
         layout="wide"
     )
     
-    st.title("💡 Quotation Management System")
-    st.write("Manage your product database and create professional quotations")
+    # Initialize authentication
+    init_auth()
+    
+    # Check authentication
+    is_authenticated, user_info = check_authentication()
+    
+    if not is_authenticated:
+        login_page()
+        return
+    
+    # Header with user info and logout
+    col1, col2, col3 = st.columns([3, 1, 1])
+    
+    with col1:
+        st.title("💡 Quotation Management System")
+        st.write("Manage your product database and create professional quotations")
+    
+    with col2:
+        if user_info:
+            st.write(f"**User:** {user_info['username']}")
+            st.write(f"**Role:** {user_info['role'].title()}")
+        else:
+            st.write("**User:** Unknown")
+            st.write("**Role:** Unknown")
+    
+    with col3:
+        if st.button("🚪 Logout", type="secondary"):
+            logout()
+    
+    st.markdown("---")
     
     # Initialize database
     db = init_database()
@@ -228,8 +455,33 @@ def main():
                 st.session_state.confirm_delete = True
                 st.warning("Click again to confirm deletion")
     
-    # Main content area with tabs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["🔍 Browse Products", "➕ Add Product", "✏️ Edit Product", "📋 Create Quotation", "📄 View Quotations", "📥 Download Quotations"])
+    # Main content area with tabs based on user role
+    if user_info['role'] == 'admin':
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+            "🔍 Browse Products", 
+            "➕ Add Product", 
+            "✏️ Edit Product", 
+            "📋 Create Quotation", 
+            "📄 View Quotations", 
+            "📥 Download Quotations",
+            "👥 Admin Panel"
+        ])
+        
+        # Admin Panel tab
+        with tab7:
+            admin_panel()
+    else:
+        # User mode - limited tabs
+        tab1, tab4, tab5, tab6 = st.tabs([
+            "🔍 Browse Products", 
+            "📋 Create Quotation", 
+            "📄 View Quotations", 
+            "📥 Download Quotations"
+        ])
+        
+        # Set admin-only tabs to None for user mode
+        tab2 = None
+        tab3 = None
     
     with tab1:
         st.header("🔍 Search & Filter Products")
