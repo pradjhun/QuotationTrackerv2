@@ -605,10 +605,6 @@ def main():
     with tab4:
         st.header("📥 Download Quotations")
         
-        # Import pandas at the beginning of this scope
-        import pandas as pd
-        from io import BytesIO
-        
         quotations = db.get_quotations()
         
         if not quotations.empty:
