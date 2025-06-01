@@ -762,7 +762,7 @@ def main():
         
         # Customer Information
         st.subheader("Customer Information")
-        customer_name = st.text_input("Customer Name", placeholder="Enter customer name")
+        customer_name = st.text_input("Customer Name", placeholder="Enter customer name", key="create_quotation_customer")
         
         # Product Search and Selection
         st.subheader("Add Products to Quotation")
