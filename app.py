@@ -457,23 +457,34 @@ def main():
                 st.write("**Current values:**")
                 st.write(record_to_edit.to_dict())
                 
+                # Initialize session state for form values if not exists
+                if f'edit_form_{selected_idx}' not in st.session_state:
+                    st.session_state[f'edit_form_{selected_idx}'] = {
+                        'sl_no': float(record_to_edit.get('SL.NO', 1)),
+                        'module': str(record_to_edit.get('MODULE', '')).replace('nan', '').replace('None', ''),
+                        'body_colour': str(record_to_edit.get('BODY COLOUR', '')).replace('nan', '').replace('None', ''),
+                        'price': str(record_to_edit.get('PRICE', '')).replace('nan', '').replace('None', ''),
+                        'watt': str(record_to_edit.get('WATT', '')).replace('nan', '').replace('None', ''),
+                        'size': str(record_to_edit.get('SIZE', '')).replace('nan', '').replace('None', ''),
+                        'beam_angle': str(record_to_edit.get('BEAM ANGLE', '')).replace('nan', '').replace('None', ''),
+                        'cut_out': str(record_to_edit.get('CUT OUT', '')).replace('nan', '').replace('None', '')
+                    }
+                
                 with st.form("edit_record"):
                     col1, col2, col3 = st.columns(3)
                     
-                    # Get current values with better handling
-                    current_sl_no = float(record_to_edit.get('SL.NO', 1))
-                    current_module = str(record_to_edit.get('MODULE', ''))
-                    current_body_colour = str(record_to_edit.get('BODY COLOUR', ''))
-                    current_price = str(record_to_edit.get('PRICE', ''))
-                    current_watt = str(record_to_edit.get('WATT', ''))
-                    current_size = str(record_to_edit.get('SIZE', ''))
-                    current_beam_angle = str(record_to_edit.get('BEAM ANGLE', ''))
-                    current_cut_out = str(record_to_edit.get('CUT OUT', ''))
+                    form_data = st.session_state[f'edit_form_{selected_idx}']
+                    
+                    # Debug output to see what values we're working with
+                    st.write("**Debug - Values being loaded into form:**")
+                    st.write(f"Model: '{form_data['module']}'")
+                    st.write(f"Body Colour: '{form_data['body_colour']}'")
+                    st.write(f"Price: '{form_data['price']}'")
                     
                     with col1:
-                        edit_sl_no = st.number_input("SL.NO", value=current_sl_no, key=f"edit_sl_no_{selected_idx}")
-                        edit_module = st.text_input("Model", value=current_module, key=f"edit_module_{selected_idx}")
-                        edit_body_colour = st.text_input("Body Colour", value=current_body_colour, key=f"edit_body_colour_{selected_idx}")
+                        edit_sl_no = st.number_input("SL.NO", value=form_data['sl_no'])
+                        edit_module = st.text_input("Model", value=form_data['module'])
+                        edit_body_colour = st.text_input("Body Colour", value=form_data['body_colour'])
                     
                     with col2:
                         # Picture upload for edit
@@ -489,13 +500,13 @@ def main():
                             st.session_state.uploaded_images[edit_uploaded_picture.name] = edit_uploaded_picture.getvalue()
                             st.success(f"New picture uploaded: {edit_uploaded_picture.name}")
                         
-                        edit_price = st.text_input("Price", value=current_price, key=f"edit_price_{selected_idx}")
-                        edit_watt = st.text_input("Watt", value=current_watt, key=f"edit_watt_{selected_idx}")
+                        edit_price = st.text_input("Price", value=form_data['price'])
+                        edit_watt = st.text_input("Watt", value=form_data['watt'])
                     
                     with col3:
-                        edit_size = st.text_input("Size", value=current_size, key=f"edit_size_{selected_idx}")
-                        edit_beam_angle = st.text_input("Beam Angle", value=current_beam_angle, key=f"edit_beam_angle_{selected_idx}")
-                        edit_cut_out = st.text_input("Cut Out", value=current_cut_out, key=f"edit_cut_out_{selected_idx}")
+                        edit_size = st.text_input("Size", value=form_data['size'])
+                        edit_beam_angle = st.text_input("Beam Angle", value=form_data['beam_angle'])
+                        edit_cut_out = st.text_input("Cut Out", value=form_data['cut_out'])
                     
                     if st.form_submit_button("Update Record", type="primary"):
                         # Validate that edit_module has a value
