@@ -460,10 +460,20 @@ def main():
                 with st.form("edit_record"):
                     col1, col2, col3 = st.columns(3)
                     
+                    # Get current values with better handling
+                    current_sl_no = float(record_to_edit.get('SL.NO', 1))
+                    current_module = str(record_to_edit.get('MODULE', ''))
+                    current_body_colour = str(record_to_edit.get('BODY COLOUR', ''))
+                    current_price = str(record_to_edit.get('PRICE', ''))
+                    current_watt = str(record_to_edit.get('WATT', ''))
+                    current_size = str(record_to_edit.get('SIZE', ''))
+                    current_beam_angle = str(record_to_edit.get('BEAM ANGLE', ''))
+                    current_cut_out = str(record_to_edit.get('CUT OUT', ''))
+                    
                     with col1:
-                        edit_sl_no = st.number_input("SL.NO", value=float(record_to_edit.get('SL.NO', 1)), key="edit_sl_no")
-                        edit_module = st.text_input("Model", value=str(record_to_edit.get('MODULE', '')))
-                        edit_body_colour = st.text_input("Body Colour", value=str(record_to_edit.get('BODY COLOUR', '')))
+                        edit_sl_no = st.number_input("SL.NO", value=current_sl_no, key=f"edit_sl_no_{selected_idx}")
+                        edit_module = st.text_input("Model", value=current_module, key=f"edit_module_{selected_idx}")
+                        edit_body_colour = st.text_input("Body Colour", value=current_body_colour, key=f"edit_body_colour_{selected_idx}")
                     
                     with col2:
                         # Picture upload for edit
@@ -479,13 +489,13 @@ def main():
                             st.session_state.uploaded_images[edit_uploaded_picture.name] = edit_uploaded_picture.getvalue()
                             st.success(f"New picture uploaded: {edit_uploaded_picture.name}")
                         
-                        edit_price = st.text_input("Price", value=str(record_to_edit.get('PRICE', '')))
-                        edit_watt = st.text_input("Watt", value=str(record_to_edit.get('WATT', '')))
+                        edit_price = st.text_input("Price", value=current_price, key=f"edit_price_{selected_idx}")
+                        edit_watt = st.text_input("Watt", value=current_watt, key=f"edit_watt_{selected_idx}")
                     
                     with col3:
-                        edit_size = st.text_input("Size", value=str(record_to_edit.get('SIZE', '')))
-                        edit_beam_angle = st.text_input("Beam Angle", value=str(record_to_edit.get('BEAM ANGLE', '')))
-                        edit_cut_out = st.text_input("Cut Out", value=str(record_to_edit.get('CUT OUT', '')))
+                        edit_size = st.text_input("Size", value=current_size, key=f"edit_size_{selected_idx}")
+                        edit_beam_angle = st.text_input("Beam Angle", value=current_beam_angle, key=f"edit_beam_angle_{selected_idx}")
+                        edit_cut_out = st.text_input("Cut Out", value=current_cut_out, key=f"edit_cut_out_{selected_idx}")
                     
                     if st.form_submit_button("Update Record", type="primary"):
                         # Validate that edit_module has a value
