@@ -217,12 +217,29 @@ def main():
         
         # Add image upload section
         with st.expander("📸 Upload Product Images (Optional)"):
-            st.info("Upload product images to display alongside your data. Image files should match the names in the PICTURE column.")
+            st.markdown("""
+            **How to add images:**
+            1. Look at the PICTURE column in your data
+            2. Upload image files with matching names
+            3. For example: if PICTURE column shows "product1.jpg", upload a file named "product1.jpg"
+            """)
+            
+            # Show what image names we're looking for
+            if 'PICTURE' in formatted_df.columns:
+                picture_names = formatted_df['PICTURE'].dropna().unique()
+                if len(picture_names) > 0:
+                    st.write("**Image names found in your data:**")
+                    for name in picture_names[:10]:  # Show first 10
+                        if str(name) not in ['', 'nan', 'None']:
+                            st.write(f"• {name}")
+                    if len(picture_names) > 10:
+                        st.write(f"... and {len(picture_names) - 10} more")
+            
             uploaded_images = st.file_uploader(
                 "Choose image files",
                 type=['png', 'jpg', 'jpeg', 'gif'],
                 accept_multiple_files=True,
-                help="Upload images that correspond to the filenames in your Excel PICTURE column"
+                help="Upload images that match the names shown above"
             )
             
             # Store uploaded images in session state
@@ -234,6 +251,11 @@ def main():
                     st.session_state.uploaded_images[uploaded_file.name] = uploaded_file.getvalue()
                 
                 st.success(f"Uploaded {len(uploaded_images)} images successfully!")
+                
+                # Show which images were uploaded
+                st.write("**Uploaded images:**")
+                for img_name in st.session_state.uploaded_images.keys():
+                    st.write(f"✓ {img_name}")
         
         # Check if we should show image gallery view
         show_gallery = ('uploaded_images' in st.session_state and 
