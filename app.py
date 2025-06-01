@@ -605,6 +605,10 @@ def main():
     with tab4:
         st.header("📥 Download Quotations")
         
+        # Import pandas at the beginning of this scope
+        import pandas as pd
+        from io import BytesIO
+        
         quotations = db.get_quotations()
         
         if not quotations.empty:
@@ -621,9 +625,6 @@ def main():
                 
                 # Create formatted quotation
                 if st.button("📄 Generate Quotation Document", type="primary"):
-                    # Create formatted Excel quotation
-                    from io import BytesIO
-                    import pandas as pd
                     
                     # Prepare the quotation data
                     quotation_data = []
@@ -635,7 +636,7 @@ def main():
                         final_price = unit_price_after_discount * item['quantity']
                         
                         quotation_data.append({
-                            'Sr. No.': idx + 1,
+                            'Sr. No.': len(quotation_data) + 1,
                             'Model': item['model'],
                             'Body Color': item['body_color'],
                             'Light Color': item['light_color'],
@@ -746,7 +747,7 @@ def main():
                         final_price = unit_price_after_discount * item['quantity']
                         
                         preview_data.append({
-                            'Sr. No.': idx + 1,
+                            'Sr. No.': len(preview_data) + 1,
                             'Model': item['model'],
                             'Body Color': item['body_color'],
                             'Light Color': item['light_color'],
