@@ -699,8 +699,8 @@ def main():
                     for col, header in enumerate(headers):
                         worksheet.write(7, col, header, table_header_format)
                     
-                    # Set row height for image rows
-                    image_row_height = 100
+                    # Set row height for image rows (increased for larger images)
+                    image_row_height = 200
                     
                     # Write data and embed images
                     for idx, (_, row) in enumerate(quotation_df.iterrows()):
@@ -726,10 +726,10 @@ def main():
                             image_path = f"uploaded_images/{picture_filename}"
                             if os.path.exists(image_path):
                                 try:
-                                    # Insert image with proper sizing
+                                    # Insert image with magnified sizing (15x larger)
                                     worksheet.insert_image(data_row, 1, image_path, {
-                                        'x_scale': 0.25,
-                                        'y_scale': 0.25,
+                                        'x_scale': 3.75,
+                                        'y_scale': 3.75,
                                         'x_offset': 5,
                                         'y_offset': 5
                                     })
