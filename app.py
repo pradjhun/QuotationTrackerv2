@@ -808,11 +808,11 @@ def main():
                             st.write(f"**Cut Out:** {product.get('CUT OUT', 'N/A')}")
                         
                         with col3:
-                            quantity = st.number_input(f"Qty", min_value=1, max_value=1000, value=1, key=f"qty_{idx}")
-                            discount = st.number_input(f"Discount %", min_value=0.0, max_value=100.0, value=0.0, step=0.1, key=f"disc_{idx}")
-                            light_color = st.selectbox("Light Color", ["Warm White", "Cool White", "Natural White"], key=f"light_{idx}")
+                            quantity = st.number_input(f"Qty", min_value=1, max_value=1000, value=1, key=f"create_qty_{idx}")
+                            discount = st.number_input(f"Discount %", min_value=0.0, max_value=100.0, value=0.0, step=0.1, key=f"create_disc_{idx}")
+                            light_color = st.selectbox("Light Color", ["Warm White", "Cool White", "Natural White"], key=f"create_light_{idx}")
                             
-                            if st.button(f"Add to Quote", key=f"add_{idx}"):
+                            if st.button(f"Add to Quote", key=f"create_add_{idx}"):
                                 # Add product to quotation
                                 quotation_item = {
                                     'model': product['MODEL'],
