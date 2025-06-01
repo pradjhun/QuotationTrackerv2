@@ -1035,7 +1035,7 @@ def main():
                     worksheet.write('B5', quotation_details['quotation_date'], subheader_format)
                     
                     # Write table headers
-                    headers = ['Sr. No.', 'Picture', 'Model', 'Body Color', 'Light Color', 'Size', 'Watt', 'Beam Angle', 'Cut Out', 'Quantity', 'Unit Price (After Discount)', 'Final Price']
+                    headers = ['Sr. No.', 'Picture', 'Model', 'Body Color', 'Light Color', 'Size', 'Watt', 'Beam Angle', 'Cut Out', 'Quantity', 'Unit Price', 'Project Price', 'Final Price']
                     for col, header in enumerate(headers):
                         worksheet.write(7, col, header, table_header_format)
                     
@@ -1057,8 +1057,9 @@ def main():
                         worksheet.write(data_row, 7, row['Beam Angle'], cell_format)
                         worksheet.write(data_row, 8, row['Cut Out'], cell_format)
                         worksheet.write(data_row, 9, row['Quantity'], cell_format)
-                        worksheet.write(data_row, 10, row['Unit Price (After Discount)'], cell_format)
-                        worksheet.write(data_row, 11, row['Final Price'], cell_format)
+                        worksheet.write(data_row, 10, f"₹{float(row['Price']):,.2f}", cell_format)  # Unit Price
+                        worksheet.write(data_row, 11, f"₹{float(row['Unit Price (After Discount)']):,.2f}", cell_format)  # Project Price
+                        worksheet.write(data_row, 12, row['Final Price'], cell_format)
                         
                         # Add product image if available
                         picture_filename = row['Picture']
@@ -1083,8 +1084,8 @@ def main():
                     
                     # Add grand total
                     total_row = 8 + len(quotation_df) + 1
-                    worksheet.write(total_row, 10, 'GRAND TOTAL:', table_header_format)
-                    worksheet.write(total_row, 11, f"₹{quotation_details['final_amount']:,.2f}", table_header_format)
+                    worksheet.write(total_row, 11, 'GRAND TOTAL:', table_header_format)
+                    worksheet.write(total_row, 12, f"₹{quotation_details['final_amount']:,.2f}", table_header_format)
                     
                     # Add Terms & Conditions
                     terms_start_row = total_row + 3
