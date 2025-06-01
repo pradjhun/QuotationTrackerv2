@@ -637,6 +637,7 @@ def main():
                         
                         quotation_data.append({
                             'Sr. No.': len(quotation_data) + 1,
+                            'Picture': item.get('picture', ''),
                             'Model': item['model'],
                             'Body Color': item['body_color'],
                             'Light Color': item['light_color'],
@@ -652,75 +653,131 @@ def main():
                     # Create DataFrame
                     quotation_df = pd.DataFrame(quotation_data)
                     
-                    # Create Excel file in memory
+                    # Create Excel file in memory with xlsxwriter for image support
                     output = BytesIO()
+                    import xlsxwriter
                     
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        # Create header information
-                        header_data = {
-                            'Field': ['QUOTATION', '', 'Customer Name:', 'Quotation ID:', 'Date:', ''],
-                            'Value': ['', '', quotation_details['customer_name'], 
-                                    quotation_details['quotation_id'], 
-                                    quotation_details['quotation_date'], '']
-                        }
-                        header_df = pd.DataFrame(header_data)
+                    # Create workbook and worksheet using xlsxwriter
+                    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+                    worksheet = workbook.add_worksheet('Quotation')
+                    
+                    # Define formats
+                    header_format = workbook.add_format({
+                        'bold': True,
+                        'font_size': 16,
+                        'align': 'left'
+                    })
+                    
+                    subheader_format = workbook.add_format({
+                        'bold': True,
+                        'font_size': 12,
+                        'align': 'left'
+                    })
+                    
+                    table_header_format = workbook.add_format({
+                        'bold': True,
+                        'bg_color': '#D3D3D3',
+                        'border': 1,
+                        'align': 'center',
+                        'valign': 'vcenter'
+                    })
+                    
+                    cell_format = workbook.add_format({
+                        'border': 1,
+                        'align': 'center',
+                        'valign': 'vcenter'
+                    })
+                    
+                    # Write header information
+                    worksheet.write('A1', 'QUOTATION', header_format)
+                    worksheet.write('A3', 'Customer Name:', subheader_format)
+                    worksheet.write('B3', quotation_details['customer_name'], subheader_format)
+                    worksheet.write('A4', 'Quotation ID:', subheader_format)
+                    worksheet.write('B4', quotation_details['quotation_id'], subheader_format)
+                    worksheet.write('A5', 'Date:', subheader_format)
+                    worksheet.write('B5', quotation_details['quotation_date'], subheader_format)
+                    
+                    # Write table headers
+                    headers = ['Sr. No.', 'Picture', 'Model', 'Body Color', 'Light Color', 'Size', 'Watt', 'Beam Angle', 'Cut Out', 'Quantity', 'Unit Price (After Discount)', 'Final Price']
+                    for col, header in enumerate(headers):
+                        worksheet.write(7, col, header, table_header_format)
+                    
+                    # Set row height for image rows
+                    image_row_height = 100
+                    
+                    # Write data and embed images
+                    for idx, (_, row) in enumerate(quotation_df.iterrows()):
+                        data_row = 8 + idx
+                        worksheet.set_row(data_row, image_row_height)
                         
-                        # Write header
-                        header_df.to_excel(writer, sheet_name='Quotation', index=False, header=False, startrow=0)
+                        # Write text data
+                        worksheet.write(data_row, 0, row['Sr. No.'], cell_format)
+                        worksheet.write(data_row, 2, row['Model'], cell_format)
+                        worksheet.write(data_row, 3, row['Body Color'], cell_format)
+                        worksheet.write(data_row, 4, row['Light Color'], cell_format)
+                        worksheet.write(data_row, 5, row['Size'], cell_format)
+                        worksheet.write(data_row, 6, row['Watt'], cell_format)
+                        worksheet.write(data_row, 7, row['Beam Angle'], cell_format)
+                        worksheet.write(data_row, 8, row['Cut Out'], cell_format)
+                        worksheet.write(data_row, 9, row['Quantity'], cell_format)
+                        worksheet.write(data_row, 10, row['Unit Price (After Discount)'], cell_format)
+                        worksheet.write(data_row, 11, row['Final Price'], cell_format)
                         
-                        # Write quotation items
-                        quotation_df.to_excel(writer, sheet_name='Quotation', index=False, startrow=7)
-                        
-                        # Write totals
-                        total_row = len(quotation_df) + 9
-                        totals_data = {
-                            'Field': ['', '', '', '', '', '', '', '', 'TOTAL:', f"₹{quotation_details['final_amount']:,.2f}"],
-                        }
-                        totals_df = pd.DataFrame([totals_data['Field']])
-                        totals_df.to_excel(writer, sheet_name='Quotation', index=False, header=False, startrow=total_row)
-                        
-                        # Format the worksheet
-                        worksheet = writer.sheets['Quotation']
-                        
-                        # Format header
-                        worksheet['A1'] = 'QUOTATION'
-                        worksheet['A3'] = 'Customer Name:'
-                        worksheet['B3'] = quotation_details['customer_name']
-                        worksheet['A4'] = 'Quotation ID:'
-                        worksheet['B4'] = quotation_details['quotation_id']
-                        worksheet['A5'] = 'Date:'
-                        worksheet['B5'] = quotation_details['quotation_date']
-                        
-                        # Format totals
-                        total_cell = f'I{total_row + 1}'
-                        amount_cell = f'J{total_row + 1}'
-                        worksheet[total_cell] = 'TOTAL:'
-                        worksheet[amount_cell] = f"₹{quotation_details['final_amount']:,.2f}"
-                        
-                        # Adjust column widths
-                        for column in worksheet.columns:
-                            max_length = 0
-                            column = [cell for cell in column]
-                            for cell in column:
+                        # Add product image if available
+                        picture_filename = row['Picture']
+                        if picture_filename and picture_filename.strip():
+                            image_path = f"uploaded_images/{picture_filename}"
+                            if os.path.exists(image_path):
                                 try:
-                                    if len(str(cell.value)) > max_length:
-                                        max_length = len(str(cell.value))
-                                except:
-                                    pass
-                            adjusted_width = min(max_length + 2, 50)
-                            worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+                                    # Insert image with proper sizing
+                                    worksheet.insert_image(data_row, 1, image_path, {
+                                        'x_scale': 0.25,
+                                        'y_scale': 0.25,
+                                        'x_offset': 5,
+                                        'y_offset': 5
+                                    })
+                                except Exception as e:
+                                    # If image insertion fails, write filename instead
+                                    worksheet.write(data_row, 1, picture_filename, cell_format)
+                            else:
+                                worksheet.write(data_row, 1, 'Image not found', cell_format)
+                        else:
+                            worksheet.write(data_row, 1, 'No image', cell_format)
                     
+                    # Add grand total
+                    total_row = 8 + len(quotation_df) + 1
+                    worksheet.write(total_row, 10, 'GRAND TOTAL:', table_header_format)
+                    worksheet.write(total_row, 11, f"₹{quotation_details['final_amount']:,.2f}", table_header_format)
+                    
+                    # Adjust column widths
+                    worksheet.set_column('A:A', 8)   # Sr. No.
+                    worksheet.set_column('B:B', 25)  # Picture (wider for images)
+                    worksheet.set_column('C:C', 15)  # Model
+                    worksheet.set_column('D:D', 12)  # Body Color
+                    worksheet.set_column('E:E', 12)  # Light Color
+                    worksheet.set_column('F:F', 10)  # Size
+                    worksheet.set_column('G:G', 8)   # Watt
+                    worksheet.set_column('H:H', 12)  # Beam Angle
+                    worksheet.set_column('I:I', 10)  # Cut Out
+                    worksheet.set_column('J:J', 10)  # Quantity
+                    worksheet.set_column('K:K', 20)  # Unit Price
+                    worksheet.set_column('L:L', 15)  # Final Price
+                    
+                    # Close workbook
+                    workbook.close()
+                    
+                    # Get the Excel data
                     excel_bytes = output.getvalue()
                     
                     # Download button
                     st.download_button(
-                        label="⬇️ Download Quotation Excel",
+                        label="⬇️ Download Quotation Excel with Images",
                         data=excel_bytes,
                         file_name=f"Quotation_{selected_quotation}_{quotation_details['customer_name'].replace(' ', '_')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
                     
-                    st.success("Quotation document generated successfully!")
+                    st.success("Quotation document with embedded product images generated successfully!")
                 
                 # Preview the quotation format
                 st.subheader("Quotation Preview")
