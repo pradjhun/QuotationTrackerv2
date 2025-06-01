@@ -3,6 +3,7 @@ import pandas as pd
 import zipfile
 import io
 import os
+from io import BytesIO
 from database_manager import DatabaseManager
 from utils import validate_excel_structure, format_dataframe_display, export_to_excel, clean_search_term
 from typing import Dict, Any
