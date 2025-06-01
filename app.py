@@ -73,6 +73,7 @@ def main():
                     all_data = db.get_all_data()
                     if not all_data.empty:
                         try:
+                            import zipfile
                             # Create backup ZIP file with data and images
                             zip_buffer = io.BytesIO()
                             timestamp = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
