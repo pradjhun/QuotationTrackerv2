@@ -83,7 +83,7 @@ def main():
             
             with col1:
                 sl_no = st.number_input("SL.NO", min_value=1, value=1, key="add_sl_no")
-                module = st.text_input("Module")
+                module = st.text_input("Model")
                 body_colour = st.text_input("Body Colour")
             
             with col2:
@@ -391,7 +391,7 @@ def main():
             
             with col1:
                 new_sl_no = st.number_input("SL.NO", min_value=1, value=db.get_total_records() + 1, key="new_sl_no")
-                new_module = st.text_input("Module")
+                new_module = st.text_input("Model")
                 new_body_colour = st.text_input("Body Colour")
             
             with col2:
@@ -462,7 +462,7 @@ def main():
                     
                     with col1:
                         edit_sl_no = st.number_input("SL.NO", value=float(record_to_edit.get('SL.NO', 1)), key="edit_sl_no")
-                        edit_module = st.text_input("Module", value=str(record_to_edit.get('MODULE', '')))
+                        edit_module = st.text_input("Model", value=str(record_to_edit.get('MODULE', '')))
                         edit_body_colour = st.text_input("Body Colour", value=str(record_to_edit.get('BODY COLOUR', '')))
                     
                     with col2:
@@ -490,17 +490,23 @@ def main():
                     if st.form_submit_button("Update Record", type="primary"):
                         # Update the record in the database
                         updated_data = all_data.copy()
-                        updated_data.iloc[selected_idx] = {
-                            'SL.NO': edit_sl_no,
-                            'MODULE': edit_module,
-                            'BODY COLOUR': edit_body_colour,
-                            'PICTURE': edit_picture_filename,
-                            'PRICE': edit_price,
-                            'WATT': edit_watt,
-                            'SIZE': edit_size,
-                            'BEAM ANGLE': edit_beam_angle,
-                            'CUT OUT': edit_cut_out
+                        # Convert values to appropriate types to avoid dtype warnings
+                        update_values = {
+                            'SL.NO': str(edit_sl_no),
+                            'MODULE': str(edit_module),
+                            'BODY COLOUR': str(edit_body_colour),
+                            'PICTURE': str(edit_picture_filename),
+                            'PRICE': str(edit_price),
+                            'WATT': str(edit_watt),
+                            'SIZE': str(edit_size),
+                            'BEAM ANGLE': str(edit_beam_angle),
+                            'CUT OUT': str(edit_cut_out)
                         }
+                        
+                        # Update each column individually to avoid dtype conflicts
+                        for col, value in update_values.items():
+                            if col in updated_data.columns:
+                                updated_data.loc[updated_data.index[selected_idx], col] = value
                         
                         # Clear and reimport updated data
                         db.clear_database()
