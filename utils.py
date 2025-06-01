@@ -91,7 +91,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
             )
     
     # Ensure string columns are properly formatted
-    string_columns = ['MODULE', 'BODY COLOUR', 'PICTURE', 'SINGLE COLOUR OPTION', 'BEAM ANGLE', 'CUT OUT']
+    string_columns = ['MODULE', 'BODY COLOUR', 'PICTURE', 'PRICE', 'BEAM ANGLE', 'CUT OUT']
     for col in string_columns:
         if col in formatted_df.columns:
             formatted_df[col] = formatted_df[col].astype(str).replace('nan', '').replace('None', '').fillna('')
@@ -99,7 +99,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
     # Reorder columns to match expected order
     preferred_order = [
         'SL.NO', 'MODULE', 'BODY COLOUR', 'PICTURE', 
-        'SINGLE COLOUR OPTION', 'WATT', 'SIZE', 'BEAM ANGLE', 'CUT OUT'
+        'PRICE', 'WATT', 'SIZE', 'BEAM ANGLE', 'CUT OUT'
     ]
     
     # Only include columns that exist in the DataFrame

@@ -189,11 +189,11 @@ def main():
             selected_beam_angle = st.selectbox("Beam Angle", beam_angles)
         
         with filter_cols2[2]:
-            if 'SINGLE COLOUR OPTION' in all_data.columns:
-                single_colors = ['All'] + sorted([str(x) for x in all_data['SINGLE COLOUR OPTION'].dropna().unique().tolist()])
+            if 'PRICE' in all_data.columns:
+                prices = ['All'] + sorted([str(x) for x in all_data['PRICE'].dropna().unique().tolist()])
             else:
-                single_colors = ['All']
-            selected_single_color = st.selectbox("Single Colour Option", single_colors)
+                prices = ['All']
+            selected_price = st.selectbox("Price", prices)
     
     # Build filters dictionary
     filters = {}
@@ -207,8 +207,8 @@ def main():
         filters['SIZE'] = selected_size
     if selected_beam_angle != 'All':
         filters['BEAM ANGLE'] = selected_beam_angle
-    if selected_single_color != 'All':
-        filters['SINGLE COLOUR OPTION'] = selected_single_color
+    if selected_price != 'All':
+        filters['PRICE'] = selected_price
     
     # Get filtered data
     if search_term or filters:
@@ -461,7 +461,7 @@ def main():
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        edit_sl_no = st.number_input("SL.NO", value=float(record_to_edit.get('SL.NO', 1)))
+                        edit_sl_no = st.number_input("SL.NO", value=float(record_to_edit.get('SL.NO', 1)), key="edit_sl_no")
                         edit_module = st.text_input("Module", value=str(record_to_edit.get('MODULE', '')))
                         edit_body_colour = st.text_input("Body Colour", value=str(record_to_edit.get('BODY COLOUR', '')))
                     
