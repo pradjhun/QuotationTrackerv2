@@ -853,7 +853,7 @@ def main():
                             quotation_date = quotation.get('quotation_date', quotation.get('created_date', ''))
                             
                             # Export to Excel with customer info
-                            excel_data = export_to_excel(items, customer_name=customer_name, customer_address=customer_address, quotation_date=quotation_date)
+                            excel_data = export_to_excel(items, customer_name=customer_name, customer_address=customer_address, quotation_date=quotation_date, quotation_id=quotation['quotation_id'])
                             st.download_button(
                                 label="📥 Excel",
                                 data=excel_data,
