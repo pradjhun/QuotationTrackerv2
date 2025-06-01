@@ -259,6 +259,15 @@ def main():
         # Admin Panel tab
         with tab7:
             admin_panel()
+        
+        # Admin-only tabs
+        with tab2:
+            st.header("➕ Add Product")
+            st.info("Add Product functionality will be available in the next update.")
+        
+        with tab3:
+            st.header("✏️ Edit Product")
+            st.info("Edit Product functionality will be available in the next update.")
     else:
         tab1, tab4, tab5, tab6 = st.tabs([
             "📋 Browse Products", 
@@ -344,16 +353,6 @@ def main():
             st.dataframe(formatted_data, use_container_width=True)
         else:
             st.info("No records found. Please upload data or adjust your search criteria.")
-    
-    # Admin-only tabs
-    if user_info and user_info['role'] == 'admin':
-        with tab2:
-            st.header("➕ Add Product")
-            st.error("Add Product functionality will be available in the next update.")
-        
-        with tab3:
-            st.header("✏️ Edit Product")
-            st.error("Edit Product functionality will be available in the next update.")
     
     with tab4:
         st.header("💼 Create Quotation")
@@ -521,7 +520,7 @@ def main():
                     
                     with col2:
                         st.write(f"Amount: ₹{quotation['final_amount']:.2f}")
-                        st.write(f"Date: {quotation['created_date']}")
+                        st.write(f"Date: {quotation.get('quotation_date', quotation.get('created_date', 'N/A'))}")
                     
                     with col3:
                         # Get quotation items for export
