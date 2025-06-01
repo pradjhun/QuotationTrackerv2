@@ -461,15 +461,24 @@ def main():
                 
                 # Initialize session state for form values if not exists
                 if f'edit_form_{selected_idx}' not in st.session_state:
+                    # Better data cleaning function
+                    def clean_value(value):
+                        if pd.isna(value) or value is None:
+                            return ''
+                        str_val = str(value)
+                        if str_val.lower() in ['nan', 'none', 'null', '']:
+                            return ''
+                        return str_val.strip()
+                    
                     st.session_state[f'edit_form_{selected_idx}'] = {
                         'sl_no': float(record_to_edit.get('SL.NO', 1)),
-                        'module': str(record_to_edit.get('MODULE', '')).replace('nan', '').replace('None', ''),
-                        'body_colour': str(record_to_edit.get('BODY COLOUR', '')).replace('nan', '').replace('None', ''),
-                        'price': str(record_to_edit.get('PRICE', '')).replace('nan', '').replace('None', ''),
-                        'watt': str(record_to_edit.get('WATT', '')).replace('nan', '').replace('None', ''),
-                        'size': str(record_to_edit.get('SIZE', '')).replace('nan', '').replace('None', ''),
-                        'beam_angle': str(record_to_edit.get('BEAM ANGLE', '')).replace('nan', '').replace('None', ''),
-                        'cut_out': str(record_to_edit.get('CUT OUT', '')).replace('nan', '').replace('None', '')
+                        'module': clean_value(record_to_edit.get('MODULE')),
+                        'body_colour': clean_value(record_to_edit.get('BODY COLOUR')),
+                        'price': clean_value(record_to_edit.get('PRICE')),
+                        'watt': clean_value(record_to_edit.get('WATT')),
+                        'size': clean_value(record_to_edit.get('SIZE')),
+                        'beam_angle': clean_value(record_to_edit.get('BEAM ANGLE')),
+                        'cut_out': clean_value(record_to_edit.get('CUT OUT'))
                     }
                 
                 with st.form("edit_record"):
@@ -478,10 +487,19 @@ def main():
                     form_data = st.session_state[f'edit_form_{selected_idx}']
                     
                     # Debug output to see what values we're working with
-                    st.write("**Debug - Values being loaded into form:**")
+                    st.write("**Debug - Raw values from DataFrame:**")
+                    st.write(f"Raw MODULE: {repr(record_to_edit.get('MODULE'))}")
+                    st.write(f"Raw BODY COLOUR: {repr(record_to_edit.get('BODY COLOUR'))}")
+                    st.write(f"Raw PRICE: {repr(record_to_edit.get('PRICE'))}")
+                    
+                    st.write("**Debug - Cleaned values being loaded into form:**")
                     st.write(f"Model: '{form_data['module']}'")
                     st.write(f"Body Colour: '{form_data['body_colour']}'")
                     st.write(f"Price: '{form_data['price']}'")
+                    
+                    # Also show all available columns
+                    st.write("**Available columns in data:**")
+                    st.write(list(record_to_edit.index))
                     
                     with col1:
                         edit_sl_no = st.number_input("SL.NO", value=form_data['sl_no'])
