@@ -226,12 +226,15 @@ To restore:
                                                 # Extract images
                                                 image_files = [f for f in file_list if f.startswith('images/') and f.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'))]
                                                 if image_files:
-                                                    os.makedirs('uploaded_images', exist_ok=True)
+                                                    if 'uploaded_images' not in st.session_state:
+                                                        st.session_state.uploaded_images = {}
+                                                    
                                                     for img_file in image_files:
                                                         with zip_ref.open(img_file) as img_data:
                                                             img_name = os.path.basename(img_file)
-                                                            with open(f'uploaded_images/{img_name}', 'wb') as f:
-                                                                f.write(img_data.read())
+                                                            img_content = img_data.read()
+                                                            st.session_state.uploaded_images[img_name] = img_content
+                                                    
                                                     st.success(f"✅ Database and {len(image_files)} images restored! {msg}")
                                                 else:
                                                     st.success(f"✅ Database restored! {msg}")
@@ -247,14 +250,19 @@ To restore:
                                                 # Extract images
                                                 image_files = [f for f in file_list if f.startswith('images/') and f.endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'))]
                                                 if image_files:
-                                                    os.makedirs('uploaded_images', exist_ok=True)
+                                                    if 'uploaded_images' not in st.session_state:
+                                                        st.session_state.uploaded_images = {}
+                                                    
+                                                    added_images = 0
                                                     for img_file in image_files:
                                                         with zip_ref.open(img_file) as img_data:
                                                             img_name = os.path.basename(img_file)
-                                                            if not os.path.exists(f'uploaded_images/{img_name}'):
-                                                                with open(f'uploaded_images/{img_name}', 'wb') as f:
-                                                                    f.write(img_data.read())
-                                                    st.success(f"✅ Data and {len(image_files)} new images added! {msg}")
+                                                            if img_name not in st.session_state.uploaded_images:
+                                                                img_content = img_data.read()
+                                                                st.session_state.uploaded_images[img_name] = img_content
+                                                                added_images += 1
+                                                    
+                                                    st.success(f"✅ Data and {added_images} new images added! {msg}")
                                                 else:
                                                     st.success(f"✅ Data added! {msg}")
                                                 st.session_state.show_restore = False
