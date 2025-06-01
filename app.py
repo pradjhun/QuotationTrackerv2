@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import io
 import zipfile
+import os
 from database_manager import DatabaseManager
 from utils import validate_excel_structure, format_dataframe_display
 

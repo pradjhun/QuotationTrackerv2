@@ -53,14 +53,18 @@ def validate_excel_structure(df: pd.DataFrame) -> Tuple[bool, str]:
     if len(df) < 1:
         return False, "The Excel file must contain at least one data row."
     
-    # Validate data types for numeric columns
+    # Validate data types for numeric columns (allow mixed content)
     numeric_columns = ['WATT', 'SIZE']
     for col in numeric_columns:
         if col in df.columns:
-            # Try to convert to numeric
-            numeric_series = pd.to_numeric(df[col], errors='coerce')
-            if numeric_series.isna().all():
-                return False, f"Column '{col}' should contain numeric values."
+            # Check if column has some valid numeric values or is mostly empty
+            non_empty_values = df[col].dropna()
+            if len(non_empty_values) > 0:
+                numeric_series = pd.to_numeric(non_empty_values, errors='coerce')
+                valid_numeric_ratio = numeric_series.notna().sum() / len(non_empty_values)
+                # Allow if at least 30% of non-empty values are numeric or if all are empty/text
+                if valid_numeric_ratio < 0.3 and len(non_empty_values) > 3:
+                    return False, f"Column '{col}' should contain mostly numeric values. Found {valid_numeric_ratio:.1%} valid numbers."
     
     return True, f"File structure validated successfully. Found {len(df)} rows with {len(df.columns)} columns."
 
