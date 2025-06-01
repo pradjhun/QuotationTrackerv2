@@ -134,6 +134,8 @@ class DatabaseManager:
         Returns:
             Complete DataFrame
         """
+        if 'quotation_database' not in st.session_state:
+            st.session_state.quotation_database = pd.DataFrame()
         return st.session_state.quotation_database.copy()
     
     def get_total_records(self) -> int:
@@ -143,6 +145,8 @@ class DatabaseManager:
         Returns:
             Number of records
         """
+        if 'quotation_database' not in st.session_state:
+            st.session_state.quotation_database = pd.DataFrame()
         return len(st.session_state.quotation_database)
     
     def clear_database(self) -> None:
