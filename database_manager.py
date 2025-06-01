@@ -1,12 +1,45 @@
 import pandas as pd
 import streamlit as st
+import sqlite3
+import os
 from typing import Tuple, Dict, Any
 
 class DatabaseManager:
     def __init__(self):
-        """Initialize the database manager with session state storage."""
-        if 'quotation_database' not in st.session_state:
-            st.session_state.quotation_database = pd.DataFrame()
+        """Initialize the database manager with persistent SQLite database."""
+        self.db_path = "quotation_database.db"
+        self._init_database()
+    
+    def _init_database(self):
+        """Initialize the SQLite database and create table if it doesn't exist."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Create table with all columns
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS quotations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sl_no REAL,
+                    model TEXT,
+                    body_color TEXT,
+                    picture TEXT,
+                    price TEXT,
+                    watt TEXT,
+                    size TEXT,
+                    beam_angle TEXT,
+                    cut_out TEXT
+                )
+            ''')
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            st.error(f"Error initializing database: {str(e)}")
+    
+    def _get_connection(self):
+        """Get database connection."""
+        return sqlite3.connect(self.db_path)
     
     def import_data(self, df: pd.DataFrame) -> Tuple[bool, str]:
         """
@@ -19,35 +52,33 @@ class DatabaseManager:
             Tuple of (success: bool, message: str)
         """
         try:
-            # Clean the data
-            df_clean = self._clean_dataframe(df)
+            # Clean the dataframe first
+            cleaned_df = self._clean_dataframe(df)
             
-            # Check if database is empty
-            if st.session_state.quotation_database.empty:
-                st.session_state.quotation_database = df_clean.copy()
-                return True, f"Successfully imported {len(df_clean)} records into the database."
-            else:
-                # Append new data (avoiding duplicates if possible)
-                existing_count = len(st.session_state.quotation_database)
-                
-                # Combine data
-                combined_df = pd.concat([st.session_state.quotation_database, df_clean], ignore_index=True)
-                
-                # Remove duplicates based on all columns except SL.NO
-                columns_for_dedup = [col for col in combined_df.columns if col.upper() != 'SL.NO']
-                if columns_for_dedup:
-                    combined_df = combined_df.drop_duplicates(subset=columns_for_dedup, keep='first')
-                
-                # Reset SL.NO to be sequential
-                if 'SL.NO' in combined_df.columns:
-                    combined_df['SL.NO'] = range(1, len(combined_df) + 1)
-                
-                st.session_state.quotation_database = combined_df
-                new_count = len(combined_df)
-                added_count = new_count - existing_count
-                
-                return True, f"Successfully added {added_count} new records. Total records: {new_count}"
-                
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            # Insert data into SQLite database
+            for _, row in cleaned_df.iterrows():
+                cursor.execute('''
+                    INSERT INTO quotations (sl_no, model, body_color, picture, price, watt, size, beam_angle, cut_out)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    row.get('SL.NO'),
+                    row.get('MODEL'),
+                    row.get('BODY CLOLOR'),
+                    row.get('PICTURE'),
+                    row.get('PRICE'),
+                    row.get('WATT'),
+                    row.get('SIZE'),
+                    row.get('BEAM ANGLE'),
+                    row.get('CUT OUT')
+                ))
+            
+            conn.commit()
+            conn.close()
+            
+            return True, f"Successfully imported {len(cleaned_df)} records to persistent database"
         except Exception as e:
             return False, f"Error importing data: {str(e)}"
     
@@ -103,10 +134,9 @@ class DatabaseManager:
         Returns:
             Filtered DataFrame
         """
-        if st.session_state.quotation_database.empty:
+        df = self.get_all_data()
+        if df.empty:
             return pd.DataFrame()
-        
-        df = st.session_state.quotation_database.copy()
         
         # Apply text search across all columns
         if search_term:
