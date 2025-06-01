@@ -115,7 +115,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
 
 def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
     """
-    Export DataFrame to Excel format as bytes.
+    Export DataFrame to Excel format as bytes with embedded images.
     
     Args:
         df: DataFrame to export
@@ -125,11 +125,89 @@ def export_to_excel(df: pd.DataFrame, filename: str = None) -> bytes:
         Excel file as bytes
     """
     import io
+    import os
+    from openpyxl import Workbook
+    from openpyxl.drawing import image
+    from openpyxl.utils.dataframe import dataframe_to_rows
+    from openpyxl.styles import Font, Alignment, Border, Side
     
+    # Create a copy of the dataframe and remove product_id if it exists
+    df_export = df.copy()
+    if 'product_id' in df_export.columns:
+        df_export = df_export.drop('product_id', axis=1)
+    
+    # Create workbook and worksheet
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Quotation"
+    
+    # Add headers with styling
+    headers = list(df_export.columns)
+    
+    # Replace 'picture' column header if it exists
+    if 'picture' in [h.lower() for h in headers]:
+        picture_idx = next(i for i, h in enumerate(headers) if h.lower() == 'picture')
+        headers[picture_idx] = 'Product Image'
+    
+    # Write headers
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num, value=header)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+    
+    # Set row height for image display
+    image_row_height = 80
+    
+    # Add data rows
+    for row_idx, (_, row) in enumerate(df_export.iterrows(), start=2):
+        ws.row_dimensions[row_idx].height = image_row_height
+        
+        for col_idx, (col_name, value) in enumerate(row.items(), start=1):
+            if col_name.lower() == 'picture':
+                # Handle image insertion
+                if value and str(value) != 'nan' and str(value) != '':
+                    image_path = os.path.join("uploaded_images", str(value))
+                    if os.path.exists(image_path):
+                        try:
+                            # Insert image
+                            img = image.Image(image_path)
+                            img.width = 60
+                            img.height = 60
+                            
+                            # Position image in cell
+                            cell_address = ws.cell(row=row_idx, column=col_idx).coordinate
+                            img.anchor = cell_address
+                            ws.add_image(img)
+                            
+                            # Set cell value to empty since we have image
+                            ws.cell(row=row_idx, column=col_idx, value="")
+                        except Exception:
+                            # If image fails to load, show filename
+                            ws.cell(row=row_idx, column=col_idx, value=str(value))
+                    else:
+                        ws.cell(row=row_idx, column=col_idx, value="Image not found")
+                else:
+                    ws.cell(row=row_idx, column=col_idx, value="No image")
+            else:
+                # Regular cell value
+                ws.cell(row=row_idx, column=col_idx, value=value)
+    
+    # Auto-adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column].width = adjusted_width
+    
+    # Save to bytes
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, sheet_name='Quotation_Data', index=False)
-    
+    wb.save(output)
     output.seek(0)
     return output.getvalue()
 
