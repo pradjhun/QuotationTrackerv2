@@ -78,6 +78,8 @@ class DatabaseManager:
                 cursor.execute('ALTER TABLE generated_quotations ADD COLUMN sales_person TEXT')
             if 'sales_contact' not in columns:
                 cursor.execute('ALTER TABLE generated_quotations ADD COLUMN sales_contact TEXT')
+            if 'created_by' not in columns:
+                cursor.execute('ALTER TABLE generated_quotations ADD COLUMN created_by TEXT')
             
             conn.commit()
             conn.close()
@@ -267,7 +269,7 @@ class DatabaseManager:
             return df[column].dropna().unique().tolist()
         return []
     
-    def save_quotation(self, quotation_id: str, customer_name: str, customer_address: str, items: list, total_amount: float, discount_total: float, final_amount: float, sales_person: str = "", sales_contact: str = "") -> Tuple[bool, str]:
+    def save_quotation(self, quotation_id: str, customer_name: str, customer_address: str, items: list, total_amount: float, discount_total: float, final_amount: float, sales_person: str = "", sales_contact: str = "", created_by: str = "") -> Tuple[bool, str]:
         """Save a quotation to the database."""
         try:
             conn = self._get_connection()
@@ -276,9 +278,9 @@ class DatabaseManager:
             # Insert quotation header
             cursor.execute('''
                 INSERT INTO generated_quotations 
-                (quotation_id, customer_name, customer_address, quotation_date, total_amount, discount_total, final_amount, sales_person, sales_contact)
-                VALUES (?, ?, ?, DATE('now'), ?, ?, ?, ?, ?)
-            ''', (quotation_id, customer_name, customer_address, total_amount, discount_total, final_amount, sales_person, sales_contact))
+                (quotation_id, customer_name, customer_address, quotation_date, total_amount, discount_total, final_amount, sales_person, sales_contact, created_by)
+                VALUES (?, ?, ?, DATE('now'), ?, ?, ?, ?, ?, ?)
+            ''', (quotation_id, customer_name, customer_address, total_amount, discount_total, final_amount, sales_person, sales_contact, created_by))
             
             # Insert quotation items
             for item in items:
@@ -305,7 +307,7 @@ class DatabaseManager:
             conn = self._get_connection()
             df = pd.read_sql_query('''
                 SELECT quotation_id, customer_name, customer_address, quotation_date, 
-                       total_amount, discount_total, final_amount, sales_person, sales_contact, created_at
+                       total_amount, discount_total, final_amount, sales_person, sales_contact, created_by, created_at
                 FROM generated_quotations 
                 ORDER BY created_at DESC
             ''', conn)

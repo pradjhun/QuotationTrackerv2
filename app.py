@@ -788,6 +788,12 @@ def main():
                 # Save quotation to database
                 quotation_id = f"Q{len(db.get_quotations()) + 1:04d}"
                 
+                # Get current user info
+                user_info = check_authentication()
+                current_user = "Unknown"
+                if user_info[0] and len(user_info) > 1 and user_info[1]:
+                    current_user = user_info[1].get('username', 'Unknown')
+                
                 success, message = db.save_quotation(
                     quotation_id=quotation_id,
                     customer_name=customer_name,
@@ -797,7 +803,8 @@ def main():
                     discount_total=0,
                     final_amount=total_amount,
                     sales_person=sales_person,
-                    sales_contact=sales_contact
+                    sales_contact=sales_contact,
+                    created_by=current_user
                 )
                 
                 if success:
@@ -851,6 +858,7 @@ def main():
                     with col1:
                         st.write(f"**{quotation['quotation_id']}**")
                         st.write(f"Customer: {quotation['customer_name']}")
+                        st.write(f"Quotation Created By: {quotation.get('created_by', 'Unknown')}")
                     
                     with col2:
                         st.write(f"Amount: ₹{quotation['final_amount']:.2f}")
