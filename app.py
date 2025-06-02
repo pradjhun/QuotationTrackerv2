@@ -33,18 +33,38 @@ def check_authentication():
 
 def login_page():
     """Display login page."""
-    # Display company logo in top left corner
-    col_logo, col_title = st.columns([1, 3])
+    # Center the header content
+    st.markdown("""
+    <style>
+    .login-header {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin-bottom: 2rem;
+    }
+    .logo-container {
+        margin-right: 2rem;
+    }
+    .title-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create centered header layout
+    col_logo, col_content = st.columns([1, 4])
     
     with col_logo:
         try:
-            st.image("company_logo.webp", width=200)
+            st.image("company_logo.webp", width=180)
         except:
             pass  # If logo not found, continue without it
     
-    with col_title:
-        st.title("🔐 Quotation Management System")
-        st.markdown("### Please Login to Continue")
+    with col_content:
+        st.markdown("# 🔐 Quotation Management System")
+        st.markdown("## Please Login to Continue")
     
 
     
