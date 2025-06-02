@@ -673,9 +673,11 @@ def main():
         
         with col1:
             customer_name = st.text_input("Organization Name", placeholder="Enter organization name")
+            sales_person = st.text_input("Sales Person Name", placeholder="Enter sales person name")
         
         with col2:
             customer_address = st.text_area("Customer Address", placeholder="Enter customer address", height=100)
+            sales_contact = st.text_input("Sales Person Contact", placeholder="Enter contact number")
         
         # Product Search and Selection
         st.subheader("Add Products to Quotation")
