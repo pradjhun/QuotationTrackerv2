@@ -795,7 +795,9 @@ def main():
                     items=st.session_state.quotation_items,
                     total_amount=total_amount,
                     discount_total=0,
-                    final_amount=total_amount
+                    final_amount=total_amount,
+                    sales_person=sales_person,
+                    sales_contact=sales_contact
                 )
                 
                 if success:
@@ -859,13 +861,15 @@ def main():
                         items = db.get_quotation_items(quotation['quotation_id'])
                         
                         if not items.empty:
-                            # Get quotation date, customer name, and address
+                            # Get quotation date, customer name, address, and sales person info
                             customer_name = quotation['customer_name']
                             customer_address = quotation.get('customer_address', '')
                             quotation_date = quotation.get('quotation_date', quotation.get('created_date', ''))
+                            sales_person = quotation.get('sales_person', '')
+                            sales_contact = quotation.get('sales_contact', '')
                             
-                            # Export to Excel with customer info
-                            excel_data = export_to_excel(items, customer_name=customer_name, customer_address=customer_address, quotation_date=quotation_date, quotation_id=quotation['quotation_id'])
+                            # Export to Excel with customer and sales person info
+                            excel_data = export_to_excel(items, customer_name=customer_name, customer_address=customer_address, quotation_date=quotation_date, quotation_id=quotation['quotation_id'], sales_person=sales_person, sales_contact=sales_contact)
                             st.download_button(
                                 label="📥 Excel",
                                 data=excel_data,

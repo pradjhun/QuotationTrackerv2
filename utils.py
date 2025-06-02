@@ -113,7 +113,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
     
     return formatted_df[final_order]
 
-def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str = "", customer_address: str = "", quotation_date: str = "", quotation_id: str = "") -> bytes:
+def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str = "", customer_address: str = "", quotation_date: str = "", quotation_id: str = "", sales_person: str = "", sales_contact: str = "") -> bytes:
     """
     Export DataFrame to Excel format as bytes with embedded images.
     
@@ -209,6 +209,30 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         # Quotation ID cell
         id_cell = ws.cell(row=current_row, column=2, value=quotation_id)
         id_cell.font = Font(size=12)
+        
+        current_row += 1
+    
+    # Sales Person Name
+    if sales_person:
+        # Label cell
+        sales_label_cell = ws.cell(row=current_row, column=1, value="Sales Person:")
+        sales_label_cell.font = Font(bold=True, size=12)
+        
+        # Sales Person cell
+        sales_cell = ws.cell(row=current_row, column=2, value=sales_person)
+        sales_cell.font = Font(size=12)
+        
+        current_row += 1
+    
+    # Sales Contact
+    if sales_contact:
+        # Label cell
+        contact_label_cell = ws.cell(row=current_row, column=1, value="Sales Contact:")
+        contact_label_cell.font = Font(bold=True, size=12)
+        
+        # Sales Contact cell
+        contact_cell = ws.cell(row=current_row, column=2, value=sales_contact)
+        contact_cell.font = Font(size=12)
         
         current_row += 1
     
