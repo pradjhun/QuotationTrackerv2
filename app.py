@@ -33,8 +33,18 @@ def check_authentication():
 
 def login_page():
     """Display login page."""
-    st.title("🔐 Quotation Management System")
-    st.markdown("### Please Login to Continue")
+    # Display company logo in top left corner
+    col_logo, col_title = st.columns([1, 3])
+    
+    with col_logo:
+        try:
+            st.image("company_logo.webp", width=200)
+        except:
+            pass  # If logo not found, continue without it
+    
+    with col_title:
+        st.title("🔐 Quotation Management System")
+        st.markdown("### Please Login to Continue")
     
     # Display default credentials info
     st.info("**Default Admin Credentials:**\nUsername: admin\nPassword: admin123")
