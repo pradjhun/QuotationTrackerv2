@@ -46,8 +46,7 @@ def login_page():
         st.title("🔐 Quotation Management System")
         st.markdown("### Please Login to Continue")
     
-    # Display default credentials info
-    st.info("**Default Admin Credentials:**\nUsername: admin\nPassword: admin123")
+
     
     with st.form("login_form"):
         username = st.text_input("Username", placeholder="Enter your username")
