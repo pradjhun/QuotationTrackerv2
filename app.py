@@ -1,10 +1,124 @@
 import streamlit as st
 import pandas as pd
 import os
+import json
+import shutil
+import sqlite3
 from io import BytesIO
+from datetime import datetime
 from database_manager import DatabaseManager
 from auth_manager import AuthManager
 from utils import validate_excel_structure, format_dataframe_display, export_to_excel, clean_search_term
+
+def create_system_backup():
+    """Create a complete backup of all system data."""
+    try:
+        backup_data = {
+            'metadata': {
+                'created_at': datetime.now().isoformat(),
+                'version': '1.0',
+                'backup_type': 'full_system'
+            },
+            'products': [],
+            'quotations': [],
+            'users': []
+        }
+        
+        # Backup products
+        db = st.session_state.db
+        products_df = db.get_all_data()
+        if not products_df.empty:
+            backup_data['products'] = products_df.to_dict('records')
+        
+        # Backup quotations
+        quotations_df = db.get_quotations()
+        if not quotations_df.empty:
+            backup_data['quotations'] = quotations_df.to_dict('records')
+            
+            # Get quotation items for each quotation
+            quotation_items = {}
+            for _, quotation in quotations_df.iterrows():
+                items_df = db.get_quotation_items(quotation['quotation_id'])
+                if not items_df.empty:
+                    quotation_items[quotation['quotation_id']] = items_df.to_dict('records')
+            backup_data['quotation_items'] = quotation_items
+        
+        # Backup users
+        auth = st.session_state.auth
+        users = auth.get_all_users()
+        if users:
+            # Remove sensitive password data from backup
+            safe_users = []
+            for user in users:
+                safe_user = {k: v for k, v in user.items() if k not in ['password_hash', 'salt']}
+                safe_users.append(safe_user)
+            backup_data['users'] = safe_users
+        
+        return json.dumps(backup_data, indent=2, default=str)
+        
+    except Exception as e:
+        st.error(f"Error creating backup: {str(e)}")
+        return None
+
+def restore_system_backup(backup_content, restore_products=True, restore_quotations=True, restore_users=False):
+    """Restore system data from backup."""
+    try:
+        db = st.session_state.db
+        auth = st.session_state.auth
+        
+        # Restore products
+        if restore_products and 'products' in backup_content:
+            # Clear existing products
+            db.clear_database()
+            
+            # Import products
+            if backup_content['products']:
+                products_df = pd.DataFrame(backup_content['products'])
+                success, message = db.import_data(products_df)
+                if not success:
+                    st.error(f"Failed to restore products: {message}")
+                    return False
+        
+        # Restore quotations
+        if restore_quotations and 'quotations' in backup_content:
+            # Clear existing quotations
+            conn = sqlite3.connect('quotation_database.db')
+            conn.execute('DELETE FROM quotations')
+            conn.execute('DELETE FROM quotation_items')
+            conn.commit()
+            conn.close()
+            
+            # Restore quotations
+            if backup_content['quotations']:
+                for quotation in backup_content['quotations']:
+                    # Get items for this quotation
+                    items = []
+                    if 'quotation_items' in backup_content and quotation['quotation_id'] in backup_content['quotation_items']:
+                        items = backup_content['quotation_items'][quotation['quotation_id']]
+                    
+                    # Save quotation
+                    db.save_quotation(
+                        quotation_id=quotation['quotation_id'],
+                        customer_name=quotation.get('customer_name', ''),
+                        customer_address=quotation.get('customer_address', ''),
+                        items=items,
+                        total_amount=quotation.get('total_amount', 0),
+                        discount_total=quotation.get('discount_total', 0),
+                        final_amount=quotation.get('final_amount', 0),
+                        sales_person=quotation.get('sales_person', ''),
+                        sales_contact=quotation.get('sales_contact', ''),
+                        created_by=quotation.get('created_by', '')
+                    )
+        
+        # Restore users (optional, with warning)
+        if restore_users and 'users' in backup_content:
+            st.warning("User restoration is not implemented for security reasons. User accounts must be recreated manually.")
+        
+        return True
+        
+    except Exception as e:
+        st.error(f"Error during restore: {str(e)}")
+        return False
 
 def init_database():
     """Initialize the database if it doesn't exist."""
@@ -113,7 +227,7 @@ def admin_panel():
     auth = st.session_state.auth
     
     # Create tabs for admin functions
-    admin_tab1, admin_tab2, admin_tab3 = st.tabs(["👤 Create User", "📋 Manage Users", "🔑 Change Password"])
+    admin_tab1, admin_tab2, admin_tab3, admin_tab4 = st.tabs(["👤 Create User", "📋 Manage Users", "🔑 Change Password", "💾 Backup & Restore"])
     
     with admin_tab1:
         st.subheader("Create New User")
@@ -278,6 +392,229 @@ def admin_panel():
                         st.error("Please fill in all fields.")
         else:
             st.info("No other users to manage.")
+    
+    with admin_tab4:
+        st.subheader("💾 System Backup & Restore")
+        
+        # Backup section
+        st.write("### 📤 Create System Backup")
+        st.info("Create a complete backup of all system data including inventory, quotations, and user accounts.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📦 Create Full Backup", type="primary"):
+                try:
+                    # Create backup data
+                    backup_data = {
+                        'metadata': {
+                            'created_at': datetime.now().isoformat(),
+                            'version': '1.0',
+                            'backup_type': 'full_system'
+                        },
+                        'products': [],
+                        'quotations': [],
+                        'users': []
+                    }
+                    
+                    # Backup products
+                    db = st.session_state.db
+                    products_df = db.get_all_data()
+                    if not products_df.empty:
+                        backup_data['products'] = products_df.to_dict('records')
+                    
+                    # Backup quotations
+                    quotations_df = db.get_quotations()
+                    if not quotations_df.empty:
+                        backup_data['quotations'] = quotations_df.to_dict('records')
+                        
+                        # Get quotation items for each quotation
+                        quotation_items = {}
+                        for _, quotation in quotations_df.iterrows():
+                            items_df = db.get_quotation_items(quotation['quotation_id'])
+                            if not items_df.empty:
+                                quotation_items[quotation['quotation_id']] = items_df.to_dict('records')
+                        backup_data['quotation_items'] = quotation_items
+                    
+                    # Backup users
+                    auth = st.session_state.auth
+                    users = auth.get_all_users()
+                    if users:
+                        # Remove sensitive password data from backup
+                        safe_users = []
+                        for user in users:
+                            safe_user = {k: v for k, v in user.items() if k not in ['password_hash', 'salt']}
+                            safe_users.append(safe_user)
+                        backup_data['users'] = safe_users
+                    
+                    backup_data = json.dumps(backup_data, indent=2, default=str)
+                    
+                    if backup_data:
+                        # Create download for backup file
+                        st.download_button(
+                            label="⬇️ Download Backup File",
+                            data=backup_data,
+                            file_name=f"system_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                            mime="application/json"
+                        )
+                        st.success("Backup created successfully! Click the download button above.")
+                    else:
+                        st.error("Failed to create backup.")
+                        
+                except Exception as e:
+                    st.error(f"Error creating backup: {str(e)}")
+        
+        with col2:
+            st.write("**Backup includes:**")
+            st.write("• All inventory/product data")
+            st.write("• All quotation records")
+            st.write("• User accounts and permissions")
+            st.write("• System settings")
+        
+        st.divider()
+        
+        # Restore section
+        st.write("### 📥 Restore from Backup")
+        st.warning("⚠️ **Warning:** Restoring will replace ALL current data. This action cannot be undone!")
+        
+        uploaded_backup = st.file_uploader(
+            "Choose backup file to restore",
+            type=['json'],
+            help="Select a backup file (.json) created by this system"
+        )
+        
+        if uploaded_backup is not None:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Backup file details:**")
+                st.write(f"• File name: {uploaded_backup.name}")
+                st.write(f"• File size: {len(uploaded_backup.getvalue())} bytes")
+                
+                # Preview backup contents
+                try:
+                    backup_content = json.loads(uploaded_backup.getvalue().decode('utf-8'))
+                    st.write("**Backup contains:**")
+                    if 'products' in backup_content:
+                        st.write(f"• {len(backup_content['products'])} products")
+                    if 'quotations' in backup_content:
+                        st.write(f"• {len(backup_content['quotations'])} quotations")
+                    if 'users' in backup_content:
+                        st.write(f"• {len(backup_content['users'])} user accounts")
+                    if 'metadata' in backup_content:
+                        st.write(f"• Created: {backup_content['metadata'].get('created_at', 'Unknown')}")
+                except Exception as e:
+                    st.error(f"Invalid backup file format: {str(e)}")
+                    backup_content = None
+            
+            with col2:
+                if backup_content:
+                    st.write("**Restore options:**")
+                    restore_products = st.checkbox("Restore inventory/products", value=True)
+                    restore_quotations = st.checkbox("Restore quotations", value=True)
+                    restore_users = st.checkbox("Restore user accounts", value=False)
+                    
+                    st.write("---")
+                    confirm_restore = st.checkbox("I understand this will replace all current data", value=False)
+                    
+                    if confirm_restore:
+                        if st.button("🔄 Restore Data", type="secondary"):
+                            try:
+                                # Restore system data from backup
+                                db = st.session_state.db
+                                auth = st.session_state.auth
+                                
+                                # Restore products
+                                if restore_products and 'products' in backup_content:
+                                    # Clear existing products
+                                    db.clear_database()
+                                    
+                                    # Import products
+                                    if backup_content['products']:
+                                        products_df = pd.DataFrame(backup_content['products'])
+                                        success, message = db.import_data(products_df)
+                                        if not success:
+                                            st.error(f"Failed to restore products: {message}")
+                                
+                                # Restore quotations
+                                if restore_quotations and 'quotations' in backup_content:
+                                    # Clear existing quotations
+                                    conn = sqlite3.connect('quotation_database.db')
+                                    conn.execute('DELETE FROM quotations')
+                                    conn.execute('DELETE FROM quotation_items')
+                                    conn.commit()
+                                    conn.close()
+                                    
+                                    # Restore quotations
+                                    if backup_content['quotations']:
+                                        for quotation in backup_content['quotations']:
+                                            # Get items for this quotation
+                                            items = []
+                                            if 'quotation_items' in backup_content and quotation['quotation_id'] in backup_content['quotation_items']:
+                                                items = backup_content['quotation_items'][quotation['quotation_id']]
+                                            
+                                            # Save quotation
+                                            db.save_quotation(
+                                                quotation_id=quotation['quotation_id'],
+                                                customer_name=quotation.get('customer_name', ''),
+                                                customer_address=quotation.get('customer_address', ''),
+                                                items=items,
+                                                total_amount=quotation.get('total_amount', 0),
+                                                discount_total=quotation.get('discount_total', 0),
+                                                final_amount=quotation.get('final_amount', 0),
+                                                sales_person=quotation.get('sales_person', ''),
+                                                sales_contact=quotation.get('sales_contact', ''),
+                                                created_by=quotation.get('created_by', '')
+                                            )
+                                
+                                # Restore users (optional, with warning)
+                                if restore_users and 'users' in backup_content:
+                                    st.warning("User restoration is not implemented for security reasons. User accounts must be recreated manually.")
+                                
+                                success = True
+                                
+                                if success:
+                                    st.success("Data restored successfully! Please refresh the page.")
+                                    st.balloons()
+                                else:
+                                    st.error("Failed to restore data.")
+                                    
+                            except Exception as e:
+                                st.error(f"Error during restore: {str(e)}")
+                    else:
+                        st.info("Please confirm that you understand the restore process will replace current data.")
+        
+        st.divider()
+        
+        # System statistics
+        st.write("### 📊 Current System Statistics")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        db = st.session_state.db
+        
+        with col1:
+            total_products = db.get_total_records()
+            st.metric("Total Products", total_products)
+        
+        with col2:
+            quotations_df = db.get_quotations()
+            total_quotations = len(quotations_df) if not quotations_df.empty else 0
+            st.metric("Total Quotations", total_quotations)
+        
+        with col3:
+            users = auth.get_all_users()
+            total_users = len(users) if users else 0
+            st.metric("Total Users", total_users)
+        
+        with col4:
+            # Calculate total database size
+            try:
+                import os
+                db_size = os.path.getsize("quotation_database.db") + os.path.getsize("users.db")
+                db_size_mb = round(db_size / (1024 * 1024), 2)
+                st.metric("Database Size", f"{db_size_mb} MB")
+            except:
+                st.metric("Database Size", "Unknown")
 
 def main():
     st.set_page_config(
