@@ -704,7 +704,7 @@ def main():
                                 st.subheader("Current Product Image")
                                 col1, col2, col3 = st.columns([1, 2, 1])
                                 with col2:
-                                    st.image(image_path, caption=f"Current image: {current_picture}", width=300)
+                                    st.image(image_path, caption=f"Current image: {current_picture}", width=75)
                             else:
                                 st.info(f"Image file not found: {current_picture}")
                         else:
