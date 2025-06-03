@@ -447,83 +447,79 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
             )
             cell.border = new_border
     
-    # Bank Details content - matching the image format
-    bank_content_start_row = current_row
-    
+    # Bank Details content rows - matching the image format exactly
     # Bank Name row
     bank_name_cell = ws.cell(row=current_row, column=8, value="Bank Name")
-    bank_name_cell.font = Font(bold=True, size=10)
+    bank_name_cell.font = Font(size=10)
     bank_name_cell.border = border
     
     ws.merge_cells(f'I{current_row}:M{current_row}')
     bank_name_value = ws.cell(row=current_row, column=9, value="kotak Bank")
     bank_name_value.border = border
+    # Apply border to all merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
-    # IFSC code row
+    # IFSC code row  
     ifsc_cell = ws.cell(row=current_row, column=8, value="IFSC code")
-    ifsc_cell.font = Font(bold=True, size=10)
+    ifsc_cell.font = Font(size=10)
     ifsc_cell.border = border
     
     ws.merge_cells(f'I{current_row}:M{current_row}')
     ifsc_value = ws.cell(row=current_row, column=9, value="")
     ifsc_value.border = border
+    # Apply border to all merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
     # Account No. row
     account_cell = ws.cell(row=current_row, column=8, value="Account No.")
-    account_cell.font = Font(bold=True, size=10)
+    account_cell.font = Font(size=10)
     account_cell.border = border
     
     ws.merge_cells(f'I{current_row}:M{current_row}')
     account_value = ws.cell(row=current_row, column=9, value="")
     account_value.border = border
+    # Apply border to all merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
     # Address row
     address_cell = ws.cell(row=current_row, column=8, value="Address")
-    address_cell.font = Font(bold=True, size=10)
+    address_cell.font = Font(size=10)
     address_cell.border = border
     
     ws.merge_cells(f'I{current_row}:M{current_row}')
     address_value = ws.cell(row=current_row, column=9, value="")
     address_value.border = border
+    # Apply border to all merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
-    # Large Signature section
+    # Large Signature section - spanning multiple rows
     signature_start_row = current_row
+    
+    # Merge signature label area vertically (4 rows)
+    ws.merge_cells(f'H{current_row}:H{current_row + 3}')
     signature_cell = ws.cell(row=current_row, column=8, value="Signature")
-    signature_cell.font = Font(bold=True, size=10)
+    signature_cell.font = Font(size=10)
+    signature_cell.alignment = Alignment(horizontal='center', vertical='center')
     signature_cell.border = border
     
-    # Merge large area for signature (spanning 4 rows)
+    # Merge signature value area (4 rows x 5 columns)
     ws.merge_cells(f'I{current_row}:M{current_row + 3}')
     signature_value = ws.cell(row=current_row, column=9, value="")
     signature_value.border = border
     
-    # Add borders to the signature label area spanning 4 rows
+    # Apply borders to all cells in the signature area
     for sig_row in range(current_row, current_row + 4):
-        sig_cell = ws.cell(row=sig_row, column=8)
-        if sig_row == current_row:
-            sig_cell.value = "Signature"
-            sig_cell.font = Font(bold=True, size=10)
-        sig_cell.border = border
-    
-    # Add thick black border around the entire Bank Details section
-    bank_end_row = current_row + 3
-    for row in range(bank_start_row, bank_end_row + 1):  # Include header to signature end
-        for col in range(8, 14):  # Columns H to M
-            cell = ws.cell(row=row, column=col)
-            current_border = cell.border
-            
-            # Apply thick black border to outer edges of the section
-            new_border = Border(
-                left=Side(style='thick', color='000000') if col == 8 else current_border.left,
-                right=Side(style='thick', color='000000') if col == 13 else current_border.right,
-                top=Side(style='thick', color='000000') if row == bank_start_row else current_border.top,
-                bottom=Side(style='thick', color='000000') if row == bank_end_row else current_border.bottom
-            )
-            cell.border = new_border
+        for sig_col in range(8, 14):
+            cell = ws.cell(row=sig_row, column=sig_col)
+            cell.border = border
     
     # Set column widths for better appearance - Column A wider to match organization name
     column_widths = [20, 15, 12, 12, 12, 8, 15, 12, 12, 12, 10, 10, 12]  # Column A increased from 10 to 20
