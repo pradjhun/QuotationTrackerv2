@@ -374,8 +374,8 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     terms_header = ws.cell(row=current_row, column=1, value="TERMS & CONDITIONS")
     terms_header.font = Font(bold=True, size=12)
     terms_header.alignment = Alignment(horizontal='center')
-    terms_header.fill = header_fill
-    terms_header.border = border
+    terms_header.fill = gray_fill
+    terms_header.border = dark_border
     
     # Bank Details section
     ws.merge_cells(f'H{current_row}:M{current_row}')
@@ -408,7 +408,9 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         ("Address", "")
     ]
     
-    # Add terms conditions with alternating row colors
+    # Add terms conditions with white background and gray line separators
+    terms_end_row = current_row + len(terms_conditions) - 1
+    
     for i, term in enumerate(terms_conditions):
         if current_row + i <= terms_start_row + 10:  # Limit to available space
             # Merge cells A to F for each term
@@ -417,17 +419,32 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
             term_cell.font = Font(size=9)
             term_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
             
-            # Apply alternating row colors - gray for even rows, white for odd rows
-            if i % 2 == 0:  # Even rows (0, 2, 4...) get gray background
-                term_cell.fill = gray_fill
-            # Odd rows get no fill (white background by default)
-            
-            # Apply border to all cells in the merged range
+            # White background for all rows (no fill)
+            # Apply gray line borders to separate each line
             for col in range(1, 7):  # Columns A to F
                 cell = ws.cell(row=current_row + i, column=col)
-                cell.border = border
-                if i % 2 == 0:  # Apply gray fill to all cells in the merged range
-                    cell.fill = gray_fill
+                # Create gray line separator border
+                cell.border = Border(
+                    left=Side(style='thin', color='808080') if col == 1 else Side(style='thin', color='FFFFFF'),
+                    right=Side(style='thin', color='808080') if col == 6 else Side(style='thin', color='FFFFFF'),
+                    top=Side(style='thin', color='808080') if i == 0 else Side(style='thin', color='808080'),
+                    bottom=Side(style='thin', color='808080')
+                )
+    
+    # Add thick black border around the entire Terms & Conditions section
+    for row in range(terms_start_row, terms_end_row + 2):  # Include header
+        for col in range(1, 7):  # Columns A to F
+            cell = ws.cell(row=row, column=col)
+            current_border = cell.border
+            
+            # Apply thick black border to outer edges of the section
+            new_border = Border(
+                left=Side(style='thick', color='000000') if col == 1 else current_border.left,
+                right=Side(style='thick', color='000000') if col == 6 else current_border.right,
+                top=Side(style='thick', color='000000') if row == terms_start_row else current_border.top,
+                bottom=Side(style='thick', color='000000') if row == terms_end_row + 1 else current_border.bottom
+            )
+            cell.border = new_border
     
     # Add bank details
     for i, (label, value) in enumerate(bank_details):
