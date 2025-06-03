@@ -138,6 +138,9 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         if col in df_export.columns:
             df_export = df_export.drop(col, axis=1)
     
+    # Add sequential serial number starting from 1
+    df_export.insert(0, 'Product No', range(1, len(df_export) + 1))
+    
     # Create workbook and worksheet
     wb = Workbook()
     ws = wb.active
