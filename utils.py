@@ -115,7 +115,7 @@ def format_dataframe_display(df: pd.DataFrame) -> pd.DataFrame:
 
 def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str = "", customer_address: str = "", quotation_date: str = "", quotation_id: str = "", sales_person: str = "", sales_contact: str = "") -> bytes:
     """
-    Export DataFrame to Excel format as bytes with embedded images.
+    Export DataFrame to Excel format as bytes with embedded images matching the professional quotation format.
     
     Args:
         df: DataFrame to export
@@ -129,7 +129,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     from openpyxl import Workbook
     from openpyxl.drawing import image
     from openpyxl.utils.dataframe import dataframe_to_rows
-    from openpyxl.styles import Font, Alignment, Border, Side
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
     
     # Create a copy of the dataframe and remove unnecessary columns
     df_export = df.copy()
@@ -139,321 +139,214 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
             df_export = df_export.drop(col, axis=1)
     
     # Add sequential serial number starting from 1
-    df_export.insert(0, 'Product No', range(1, len(df_export) + 1))
+    df_export.insert(0, 'Product No', list(range(1, len(df_export) + 1)))
     
     # Create workbook and worksheet
     wb = Workbook()
     ws = wb.active
     ws.title = "Quotation"
     
-    # Add quotation header information
+    # Define styles
+    header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+    border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    
     current_row = 1
     
-    # Title
+    # Title row - QUOTATION
+    ws.merge_cells(f'A{current_row}:M{current_row}')
     title_cell = ws.cell(row=current_row, column=1, value="QUOTATION")
     title_cell.font = Font(bold=True, size=16)
-    title_cell.alignment = Alignment(horizontal='center')
-    ws.merge_cells(f'A{current_row}:F{current_row}')
-    current_row += 2
+    title_cell.alignment = Alignment(horizontal='center', vertical='center')
+    title_cell.fill = header_fill
+    title_cell.border = border
+    ws.row_dimensions[current_row].height = 30
+    current_row += 1
     
+    # Left section headers and Power Udyog section
     # Organization Name
-    if customer_name:
-        # Label cell
-        org_label_cell = ws.cell(row=current_row, column=1, value="Organization Name:")
-        org_label_cell.font = Font(bold=True, size=12)
-        
-        # Customer name cell (merge if needed)
-        org_name_cell = ws.cell(row=current_row, column=2, value=customer_name)
-        org_name_cell.font = Font(size=12)
-        
-        # Merge cells B to F for organization name if it's long
-        if len(customer_name) > 20:
-            ws.merge_cells(f'B{current_row}:F{current_row}')
-        
-        current_row += 1
+    ws.cell(row=current_row, column=1, value="Organization Name:").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=1).border = border
+    ws.merge_cells(f'B{current_row}:F{current_row}')
+    ws.cell(row=current_row, column=2, value=customer_name or "").border = border
     
-    # Customer Address
-    if customer_address:
-        # Label cell
-        addr_label_cell = ws.cell(row=current_row, column=1, value="Address:")
-        addr_label_cell.font = Font(bold=True, size=12)
-        
-        # Address cell (merge for more space)
-        addr_cell = ws.cell(row=current_row, column=2, value=customer_address)
-        addr_cell.font = Font(size=12)
-        addr_cell.alignment = Alignment(wrap_text=True, vertical='top')
-        
-        # Always merge cells B to F for address
-        ws.merge_cells(f'B{current_row}:F{current_row}')
-        
-        # Increase row height for address
-        ws.row_dimensions[current_row].height = 40
-        
-        current_row += 1
+    # Power Udyog branding (right side)
+    ws.merge_cells(f'H{current_row}:M{current_row}')
+    power_udyog_cell = ws.cell(row=current_row, column=8, value="Power Udyog")
+    power_udyog_cell.font = Font(bold=True, size=20, color="1F4E79")
+    power_udyog_cell.alignment = Alignment(horizontal='center', vertical='center')
+    power_udyog_cell.border = border
+    current_row += 1
+    
+    # Address
+    ws.cell(row=current_row, column=1, value="Address:").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=1).border = border
+    ws.merge_cells(f'B{current_row}:F{current_row}')
+    addr_cell = ws.cell(row=current_row, column=2, value=customer_address or "")
+    addr_cell.border = border
+    addr_cell.alignment = Alignment(wrap_text=True, vertical='top')
+    ws.row_dimensions[current_row].height = 30
+    
+    # Empty right side cells with borders
+    for col in range(8, 14):
+        ws.cell(row=current_row, column=col).border = border
+    current_row += 1
     
     # Date
-    if quotation_date:
-        # Label cell
-        date_label_cell = ws.cell(row=current_row, column=1, value="Date:")
-        date_label_cell.font = Font(bold=True, size=12)
-        
-        # Date cell
-        date_cell = ws.cell(row=current_row, column=2, value=quotation_date)
-        date_cell.font = Font(size=12)
-        
-        current_row += 1
+    ws.cell(row=current_row, column=1, value="Date:").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=1).border = border
+    ws.cell(row=current_row, column=2, value=quotation_date or "").border = border
     
-    # Quotation ID (below date)
-    if quotation_id:
-        # Label cell
-        id_label_cell = ws.cell(row=current_row, column=1, value="Quotation ID:")
-        id_label_cell.font = Font(bold=True, size=12)
-        
-        # Quotation ID cell
-        id_cell = ws.cell(row=current_row, column=2, value=quotation_id)
-        id_cell.font = Font(size=12)
-        
-        current_row += 1
+    # Quotation ID (right side)
+    ws.cell(row=current_row, column=8, value="Quotation ID:").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=8).border = border
+    ws.cell(row=current_row, column=9, value=quotation_id or "").border = border
     
-    # Sales Person Name
-    if sales_person:
-        # Label cell
-        sales_label_cell = ws.cell(row=current_row, column=1, value="Sales Person:")
-        sales_label_cell.font = Font(bold=True, size=12)
-        
-        # Sales Person cell
-        sales_cell = ws.cell(row=current_row, column=2, value=sales_person)
-        sales_cell.font = Font(size=12)
-        
-        current_row += 1
-    
-    # Sales Contact
-    if sales_contact:
-        # Label cell
-        contact_label_cell = ws.cell(row=current_row, column=1, value="Sales Contact:")
-        contact_label_cell.font = Font(bold=True, size=12)
-        
-        # Sales Contact cell
-        contact_cell = ws.cell(row=current_row, column=2, value=sales_contact)
-        contact_cell.font = Font(size=12)
-        
-        current_row += 1
-    
-    # Add some spacing
+    # Fill remaining cells with borders
+    for col in [3, 4, 5, 6, 10, 11, 12, 13]:
+        ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
-    # Add headers with styling
-    headers = list(df_export.columns)
+    # PAN No and Sales Person
+    ws.cell(row=current_row, column=1, value="PAN No").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=1).border = border
+    ws.cell(row=current_row, column=2, value="").border = border
     
-    # Replace column headers for better formatting and convert to sentence case
-    header_replacements = {
-        'picture': 'Product Image',
-        'id': 'Product No'
-    }
+    ws.cell(row=current_row, column=8, value="Sales Person:").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=8).border = border
+    ws.cell(row=current_row, column=9, value=sales_person or "").border = border
     
-    for i, header in enumerate(headers):
-        for old_name, new_name in header_replacements.items():
-            if header.lower() == old_name:
-                headers[i] = new_name
-        
-        # Convert remaining headers to sentence case
-        if headers[i] not in header_replacements.values():
-            headers[i] = headers[i].replace('_', ' ').title()
+    # Fill remaining cells with borders
+    for col in [3, 4, 5, 6, 10, 11, 12, 13]:
+        ws.cell(row=current_row, column=col).border = border
+    current_row += 1
     
-    # Create border style
-    thin_border = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
+    # GSTN No and Sales Contact
+    ws.cell(row=current_row, column=1, value="GSTN No").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=1).border = border
+    ws.cell(row=current_row, column=2, value="").border = border
     
-    # Write headers with borders and center alignment
-    header_row = current_row
+    ws.cell(row=current_row, column=8, value="Sales Contact:").font = Font(bold=True, size=10)
+    ws.cell(row=current_row, column=8).border = border
+    ws.cell(row=current_row, column=9, value=sales_contact or "").border = border
+    
+    # Fill remaining cells with borders
+    for col in [3, 4, 5, 6, 10, 11, 12, 13]:
+        ws.cell(row=current_row, column=col).border = border
+    current_row += 1
+    
+    # Product table headers
+    headers = ['Product No', 'Model', 'Body Color', 'Product Image', 'Price', 'Watt', 'Size', 'Beam Angle', 'Cut Out', 'Light Color', 'Quantity', 'Discount', 'Item Total']
+    
     for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=header_row, column=col_num, value=header)
-        cell.font = Font(bold=True)
+        cell = ws.cell(row=current_row, column=col_num, value=header)
+        cell.font = Font(bold=True, size=10)
         cell.alignment = Alignment(horizontal='center', vertical='center')
-        cell.border = thin_border
-    
+        cell.fill = header_fill
+        cell.border = border
     current_row += 1
     
-    # Set row height for image display
-    image_row_height = 80
-    
-    # Add data rows
-    for data_idx, (_, row) in enumerate(df_export.iterrows()):
-        row_idx = current_row + data_idx
-        ws.row_dimensions[row_idx].height = image_row_height
+    # Product data rows with images
+    for idx, row in df_export.iterrows():
+        row_height = 60  # Default height for rows with images
         
-        for col_idx, (col_name, value) in enumerate(row.items(), start=1):
-            if col_name.lower() == 'picture':
-                # Handle image insertion
-                if value and str(value) != 'nan' and str(value) != '':
-                    image_path = os.path.join("uploaded_images", str(value))
-                    if os.path.exists(image_path):
-                        try:
-                            # Insert image
-                            img = image.Image(image_path)
-                            img.width = 60
-                            img.height = 60
-                            
-                            # Position image in cell
-                            cell_address = ws.cell(row=row_idx, column=col_idx).coordinate
-                            img.anchor = cell_address
-                            ws.add_image(img)
-                            
-                            # Set cell value to empty since we have image
-                            cell = ws.cell(row=row_idx, column=col_idx, value="")
-                            cell.border = thin_border
-                            cell.alignment = Alignment(horizontal='center', vertical='center')
-                        except Exception:
-                            # If image fails to load, show filename
-                            cell = ws.cell(row=row_idx, column=col_idx, value=str(value))
-                            cell.border = thin_border
-                            cell.alignment = Alignment(horizontal='center', vertical='center')
-                    else:
-                        cell = ws.cell(row=row_idx, column=col_idx, value="Image not found")
-                        cell.border = thin_border
-                        cell.alignment = Alignment(horizontal='center', vertical='center')
-                else:
-                    cell = ws.cell(row=row_idx, column=col_idx, value="No image")
-                    cell.border = thin_border
-                    cell.alignment = Alignment(horizontal='center', vertical='center')
-            else:
-                # Check if this is a price or item_total column to add Rupee symbol
-                header_name = headers[col_idx - 1].lower() if col_idx - 1 < len(headers) else ""
-                if any(price_word in header_name for price_word in ['price', 'total', 'amount', 'cost']):
-                    try:
-                        # Try to format as currency with Rupee symbol
-                        numeric_value = float(value)
-                        formatted_value = f"₹{numeric_value:,.2f}"
-                        cell = ws.cell(row=row_idx, column=col_idx, value=formatted_value)
-                        cell.border = thin_border
-                        cell.alignment = Alignment(horizontal='center', vertical='center')
-                    except (ValueError, TypeError):
-                        # If not numeric, use original value
-                        cell = ws.cell(row=row_idx, column=col_idx, value=value)
-                        cell.border = thin_border
-                        cell.alignment = Alignment(horizontal='center', vertical='center')
-                else:
-                    # Regular cell value
-                    cell = ws.cell(row=row_idx, column=col_idx, value=value)
-                    cell.border = thin_border
-                    
-                    # Center align all table cells for better appearance
-                    cell.alignment = Alignment(horizontal='center', vertical='center')
-    
-    # Calculate final row after data
-    final_data_row = current_row + len(df_export) - 1
-    
-    # Set column widths for better appearance
-    column_widths = {
-        'Product No': 12,      # Reduced width for Product No
-        'model': 20,
-        'body_color': 15,
-        'Product Image': 15,
-        'price': 12,
-        'watt': 10,
-        'size': 12,
-        'beam_angle': 15,
-        'cut_out': 12,
-        'light_color': 15,
-        'quantity': 10,
-        'discount': 10,
-        'item_total': 15
-    }
-    
-    # Apply column widths using column letters directly
-    from openpyxl.utils import get_column_letter
-    for col_num, header in enumerate(headers, 1):
-        width = column_widths.get(header, 15)  # Default width 15
-        column_letter = get_column_letter(col_num)
-        ws.column_dimensions[column_letter].width = width
-    
-    # Add totals section
-    totals_start_row = final_data_row + 2
-    
-    # Calculate totals from the data
-    subtotal = 0
-    
-    # Debug: print available columns
-    print(f"Available columns: {list(df_export.columns)}")
-    
-    # Priority order for finding the correct total column
-    price_columns = ['item_total', 'Item Total', 'ITEM TOTAL', 'total', 'Total', 'TOTAL',
-                    'final_price', 'Final Price', 'FINAL PRICE', 'final_amount', 'Final Amount', 'FINAL AMOUNT']
-    
-    for col in price_columns:
-        # Check both exact match and case-insensitive match
-        matching_cols = [c for c in df_export.columns if c.lower() == col.lower()]
-        if matching_cols:
-            actual_col = matching_cols[0]
-            try:
-                # Convert to numeric and sum, handling any non-numeric values
-                numeric_values = pd.to_numeric(df_export[actual_col], errors='coerce').fillna(0)
-                subtotal = numeric_values.sum()
-                print(f"Using column '{actual_col}' for subtotal calculation: {subtotal}")
-                if subtotal > 0:
-                    break
-            except Exception as e:
-                print(f"Error calculating from column '{actual_col}': {e}")
-                continue
-    
-    # If no price column found, try to calculate from quantity and unit price
-    if subtotal == 0:
-        print("No price column found, trying to calculate from quantity * unit_price")
-        try:
-            qty_cols = [c for c in df_export.columns if 'quantity' in c.lower() or 'qty' in c.lower()]
-            price_cols = [c for c in df_export.columns if 'unit' in c.lower() and 'price' in c.lower()]
+        for col_idx, (col_name, value) in enumerate(row.items(), 1):
+            cell = ws.cell(row=current_row, column=col_idx)
+            cell.border = border
+            cell.alignment = Alignment(horizontal='center', vertical='center')
             
-            if qty_cols and price_cols:
-                qty_col = qty_cols[0]
-                price_col = price_cols[0]
-                quantities = pd.to_numeric(df_export[qty_col], errors='coerce').fillna(0)
-                unit_prices = pd.to_numeric(df_export[price_col], errors='coerce').fillna(0)
-                subtotal = (quantities * unit_prices).sum()
-                print(f"Calculated subtotal from {qty_col} * {price_col}: {subtotal}")
-        except Exception as e:
-            print(f"Error calculating from quantity * unit_price: {e}")
-            pass
+            if col_name.lower() == 'picture' and value and os.path.exists(value):
+                try:
+                    # Add image to cell
+                    img = image.Image(value)
+                    img.width = 50  # Set image width
+                    img.height = 50  # Set image height
+                    ws.add_image(img, cell.coordinate)
+                    cell.value = ""  # Don't add text value for image cell
+                except:
+                    cell.value = "Image not found"
+            else:
+                # Format numeric values appropriately
+                if col_name.lower() in ['price', 'item_total']:
+                    try:
+                        cell.value = f"₹{float(value):,.2f}"
+                    except:
+                        cell.value = str(value)
+                elif col_name.lower() == 'discount':
+                    try:
+                        cell.value = f"{float(value)}%"
+                    except:
+                        cell.value = str(value)
+                else:
+                    cell.value = str(value) if value is not None else ""
+        
+        ws.row_dimensions[current_row].height = row_height
+        current_row += 1
     
-    gst_amount = subtotal * 0.18  # 18% GST
+    # Calculate totals
+    subtotal = df_export['item_total'].sum() if 'item_total' in df_export.columns else 0
+    gst_rate = 18.0
+    gst_amount = subtotal * (gst_rate / 100)
     grand_total = subtotal + gst_amount
     
-    # Add subtotal row
-    subtotal_cell = ws.cell(row=totals_start_row, column=len(headers)-1, value="Subtotal:")
-    subtotal_cell.font = Font(bold=True)
-    subtotal_cell.alignment = Alignment(horizontal='right')
+    # Add total rows
+    current_row += 1  # Add spacing
     
-    subtotal_value_cell = ws.cell(row=totals_start_row, column=len(headers), value=f"₹{subtotal:,.2f}")
-    subtotal_value_cell.font = Font(bold=True)
-    subtotal_value_cell.alignment = Alignment(horizontal='right')
+    # Subtotal
+    ws.merge_cells(f'L{current_row}:L{current_row}')
+    subtotal_label = ws.cell(row=current_row, column=12, value="Subtotal:")
+    subtotal_label.font = Font(bold=True)
+    subtotal_label.alignment = Alignment(horizontal='right')
+    subtotal_label.border = border
     
-    # Add GST row
-    gst_cell = ws.cell(row=totals_start_row + 1, column=len(headers)-1, value="GST (18%):")
-    gst_cell.font = Font(bold=True)
-    gst_cell.alignment = Alignment(horizontal='right')
+    subtotal_value = ws.cell(row=current_row, column=13, value=f"₹{subtotal:,.2f}")
+    subtotal_value.font = Font(bold=True)
+    subtotal_value.alignment = Alignment(horizontal='center')
+    subtotal_value.border = border
+    current_row += 1
     
-    gst_value_cell = ws.cell(row=totals_start_row + 1, column=len(headers), value=f"₹{gst_amount:,.2f}")
-    gst_value_cell.font = Font(bold=True)
-    gst_value_cell.alignment = Alignment(horizontal='right')
+    # GST
+    gst_label = ws.cell(row=current_row, column=12, value=f"GST ({gst_rate}%):")
+    gst_label.font = Font(bold=True)
+    gst_label.alignment = Alignment(horizontal='right')
+    gst_label.border = border
     
-    # Add grand total row
-    total_cell = ws.cell(row=totals_start_row + 2, column=len(headers)-1, value="Grand Total:")
-    total_cell.font = Font(bold=True, size=12)
-    total_cell.alignment = Alignment(horizontal='right')
+    gst_value = ws.cell(row=current_row, column=13, value=f"₹{gst_amount:,.2f}")
+    gst_value.font = Font(bold=True)
+    gst_value.alignment = Alignment(horizontal='center')
+    gst_value.border = border
+    current_row += 1
     
-    total_value_cell = ws.cell(row=totals_start_row + 2, column=len(headers), value=f"₹{grand_total:,.2f}")
-    total_value_cell.font = Font(bold=True, size=12)
-    total_value_cell.alignment = Alignment(horizontal='right')
+    # Grand Total
+    grand_total_label = ws.cell(row=current_row, column=12, value="Grand Total:")
+    grand_total_label.font = Font(bold=True)
+    grand_total_label.alignment = Alignment(horizontal='right')
+    grand_total_label.border = border
     
-    # Add Terms & Conditions section
-    terms_start_row = totals_start_row + 5
-    terms_title_cell = ws.cell(row=terms_start_row, column=1, value="TERMS & CONDITIONS")
-    terms_title_cell.font = Font(bold=True, size=14)
-    terms_title_cell.alignment = Alignment(horizontal='center')
-    ws.merge_cells(f'A{terms_start_row}:F{terms_start_row}')
+    grand_total_value = ws.cell(row=current_row, column=13, value=f"₹{grand_total:,.2f}")
+    grand_total_value.font = Font(bold=True)
+    grand_total_value.alignment = Alignment(horizontal='center')
+    grand_total_value.border = border
+    current_row += 2
+    
+    # Terms & Conditions and Bank Details sections
+    terms_start_row = current_row
+    
+    # Terms & Conditions section
+    ws.merge_cells(f'A{current_row}:F{current_row}')
+    terms_header = ws.cell(row=current_row, column=1, value="TERMS & CONDITIONS")
+    terms_header.font = Font(bold=True, size=12)
+    terms_header.alignment = Alignment(horizontal='center')
+    terms_header.fill = header_fill
+    terms_header.border = border
+    
+    # Bank Details section
+    ws.merge_cells(f'H{current_row}:M{current_row}')
+    bank_header = ws.cell(row=current_row, column=8, value="Bank Details")
+    bank_header.font = Font(bold=True, size=12)
+    bank_header.alignment = Alignment(horizontal='center')
+    bank_header.fill = header_fill
+    bank_header.border = border
+    current_row += 1
     
     # Terms & Conditions content
     terms_conditions = [
@@ -463,37 +356,52 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         "TWO YEAR WARRANTY ON LED",
         "TWO YEAR WARRANTY ON DRIVER",
         "SPOT LIGHTS ARE IP GRADED & DUSTPROOF",
-        "DELIVERY WILL TAKE MINIMUM 10-15 WORKING DAYS FROM THE DATE OF CONFIRMED P.O AND ADVANCE PAYMENT.",
+        "DELIVERY WILL TAKE MINIMUM 10-35 WORKING DAYS FROM THE DATE OF CONFIRMED P.O AND ADVANCE PAYMENT.",
         "DELIVERY CHARGE EXTRA AS PER ACTUAL",
         "FOR EVERY BILLING GST NO OR PANCARD NO IS MANDATORY",
         "STRICTLY GOODS ONCE SOLD WILL NOT BE TAKEN BACK AS PER GST"
     ]
     
-    # Add each term
-    for i, term in enumerate(terms_conditions):
-        term_row = terms_start_row + i + 2
-        term_cell = ws.cell(row=term_row, column=1, value=f"• {term}")
-        term_cell.font = Font(size=10)
-        ws.merge_cells(f'A{term_row}:F{term_row}')
+    # Bank details content
+    bank_details = [
+        ("Bank Name", "kotak Bank"),
+        ("IFSC code", ""),
+        ("Account No.", ""),
+        ("Address", "")
+    ]
     
-    # Auto-adjust column widths
-    for col_idx in range(1, len(headers) + 1):
-        max_length = 0
-        column_letter = chr(64 + col_idx)  # A, B, C, etc.
-        
-        # Check all cells in this column for content length
-        for row in ws.iter_rows(min_col=col_idx, max_col=col_idx):
-            for cell in row:
-                if hasattr(cell, 'value') and cell.value:
-                    try:
-                        if len(str(cell.value)) > max_length:
-                            max_length = len(str(cell.value))
-                    except:
-                        pass
-        
-        # Set minimum width and apply
-        adjusted_width = max(min(max_length + 2, 50), 12)
-        ws.column_dimensions[column_letter].width = adjusted_width
+    # Add terms conditions
+    for i, term in enumerate(terms_conditions):
+        if current_row + i <= terms_start_row + 10:  # Limit to available space
+            ws.merge_cells(f'A{current_row + i}:F{current_row + i}')
+            term_cell = ws.cell(row=current_row + i, column=1, value=term)
+            term_cell.font = Font(size=9)
+            term_cell.alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
+            term_cell.border = border
+    
+    # Add bank details
+    for i, (label, value) in enumerate(bank_details):
+        if current_row + i <= terms_start_row + 4:  # Limit to 4 rows for bank details
+            bank_label = ws.cell(row=current_row + i, column=8, value=label)
+            bank_label.font = Font(bold=True, size=10)
+            bank_label.border = border
+            
+            ws.merge_cells(f'I{current_row + i}:M{current_row + i}')
+            bank_value = ws.cell(row=current_row + i, column=9, value=value)
+            bank_value.border = border
+    
+    # Add signature section at the bottom
+    signature_row = terms_start_row + 11
+    ws.merge_cells(f'H{signature_row}:M{signature_row}')
+    signature_cell = ws.cell(row=signature_row, column=8, value="Signature")
+    signature_cell.font = Font(bold=True, size=12)
+    signature_cell.alignment = Alignment(horizontal='center')
+    signature_cell.border = border
+    
+    # Set column widths for better appearance
+    column_widths = [10, 15, 12, 12, 12, 8, 15, 12, 12, 12, 10, 10, 12]
+    for i, width in enumerate(column_widths, 1):
+        ws.column_dimensions[chr(64 + i)].width = width
     
     # Save to bytes
     output = io.BytesIO()
