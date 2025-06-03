@@ -535,23 +535,24 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
-    # Large Signature section - spanning multiple rows
+    # Large Signature section - spanning to match Terms & Conditions height
     signature_start_row = current_row
+    signature_rows_needed = len(terms_conditions) - 4  # Remaining rows to match terms height
     
-    # Merge signature label area vertically (4 rows)
-    ws.merge_cells(f'H{current_row}:H{current_row + 3}')
+    # Merge signature label area vertically to match terms height
+    ws.merge_cells(f'H{current_row}:H{current_row + signature_rows_needed - 1}')
     signature_cell = ws.cell(row=current_row, column=8, value="Signature")
     signature_cell.font = Font(size=10)
     signature_cell.alignment = Alignment(horizontal='center', vertical='center')
     signature_cell.border = border
     
-    # Merge signature value area (4 rows x 5 columns)
-    ws.merge_cells(f'I{current_row}:M{current_row + 3}')
+    # Merge signature value area to match terms height
+    ws.merge_cells(f'I{current_row}:M{current_row + signature_rows_needed - 1}')
     signature_value = ws.cell(row=current_row, column=9, value="")
     signature_value.border = border
     
     # Apply borders to all cells in the signature area
-    for sig_row in range(current_row, current_row + 4):
+    for sig_row in range(current_row, current_row + signature_rows_needed):
         for sig_col in range(8, 14):
             cell = ws.cell(row=sig_row, column=sig_col)
             cell.border = border
