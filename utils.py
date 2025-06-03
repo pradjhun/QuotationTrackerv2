@@ -133,7 +133,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     
     # Create a copy of the dataframe and remove unnecessary columns
     df_export = df.copy()
-    columns_to_remove = ['product_id', 'quotation_id']
+    columns_to_remove = ['product_id', 'quotation_id', 'id']
     for col in columns_to_remove:
         if col in df_export.columns:
             df_export = df_export.drop(col, axis=1)
