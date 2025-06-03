@@ -221,8 +221,15 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     date_cell = ws.cell(row=current_row, column=1, value="Date:")
     date_cell.font = Font(bold=True, size=10)
     date_cell.border = border
+    
+    # Merge cells B to F for date value and align left
+    ws.merge_cells(f'B{current_row}:F{current_row}')
     date_value_cell = ws.cell(row=current_row, column=2, value=quotation_date or "")
     date_value_cell.border = border
+    date_value_cell.alignment = Alignment(horizontal='left')
+    # Apply borders to merged cells
+    for col in range(2, 7):
+        ws.cell(row=current_row, column=col).border = border
     
     # Quotation ID (right side)
     quot_id_cell = ws.cell(row=current_row, column=8, value="Quotation ID:")
@@ -232,7 +239,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     quot_value_cell.border = border
     
     # Fill remaining cells with borders
-    for col in [3, 4, 5, 6, 7, 10, 11, 12, 13]:
+    for col in [7, 10, 11, 12, 13]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -240,8 +247,15 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     pan_cell = ws.cell(row=current_row, column=1, value="PAN No")
     pan_cell.font = Font(bold=True, size=10)
     pan_cell.border = border
+    
+    # Merge cells B to F for PAN No value and align left
+    ws.merge_cells(f'B{current_row}:F{current_row}')
     pan_value_cell = ws.cell(row=current_row, column=2, value="")
     pan_value_cell.border = border
+    pan_value_cell.alignment = Alignment(horizontal='left')
+    # Apply borders to merged cells
+    for col in range(2, 7):
+        ws.cell(row=current_row, column=col).border = border
     
     sales_cell = ws.cell(row=current_row, column=8, value="Sales Person:")
     sales_cell.font = Font(bold=True, size=10)
@@ -250,7 +264,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     sales_value_cell.border = border
     
     # Fill remaining cells with borders
-    for col in [3, 4, 5, 6, 7, 10, 11, 12, 13]:
+    for col in [7, 10, 11, 12, 13]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -258,8 +272,15 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     gstn_cell = ws.cell(row=current_row, column=1, value="GSTN No")
     gstn_cell.font = Font(bold=True, size=10)
     gstn_cell.border = border
+    
+    # Merge cells B to F for GSTN No value and align left
+    ws.merge_cells(f'B{current_row}:F{current_row}')
     gstn_value_cell = ws.cell(row=current_row, column=2, value="")
     gstn_value_cell.border = border
+    gstn_value_cell.alignment = Alignment(horizontal='left')
+    # Apply borders to merged cells
+    for col in range(2, 7):
+        ws.cell(row=current_row, column=col).border = border
     
     contact_cell = ws.cell(row=current_row, column=8, value="Sales Contact:")
     contact_cell.font = Font(bold=True, size=10)
@@ -268,7 +289,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     contact_value_cell.border = border
     
     # Fill remaining cells with borders
-    for col in [3, 4, 5, 6, 7, 10, 11, 12, 13]:
+    for col in [7, 10, 11, 12, 13]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
