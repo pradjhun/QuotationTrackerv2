@@ -149,6 +149,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     # Define styles
     header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+    dark_border = Border(left=Side(style='thick'), right=Side(style='thick'), top=Side(style='thick'), bottom=Side(style='thick'))
     
     current_row = 1
     
@@ -203,10 +204,13 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     for col in range(8, 14):
         ws.cell(row=current_row, column=col).border = border
     
+    # Merge column G from row 2 to row 6 (G2:G6)
+    ws.merge_cells(f'G{power_udyog_start_row}:G{current_row + 3}')
+    
     # Now merge Power Udyog across both rows (vertically and horizontally)
     ws.merge_cells(f'H{power_udyog_start_row}:M{current_row}')
     power_udyog_cell = ws.cell(row=power_udyog_start_row, column=8, value="Power Udyog")
-    power_udyog_cell.font = Font(bold=True, size=20, color="1F4E79")
+    power_udyog_cell.font = Font(bold=True, size=36, color="1F4E79")
     power_udyog_cell.alignment = Alignment(horizontal='center', vertical='center')
     power_udyog_cell.border = border
     
@@ -370,7 +374,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     terms_header.font = Font(bold=True, size=12)
     terms_header.alignment = Alignment(horizontal='center')
     terms_header.fill = header_fill
-    terms_header.border = border
+    terms_header.border = dark_border
     
     # Bank Details section
     ws.merge_cells(f'H{current_row}:M{current_row}')
@@ -378,7 +382,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     bank_header.font = Font(bold=True, size=12)
     bank_header.alignment = Alignment(horizontal='center')
     bank_header.fill = header_fill
-    bank_header.border = border
+    bank_header.border = dark_border
     current_row += 1
     
     # Terms & Conditions content
@@ -410,18 +414,18 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
             term_cell = ws.cell(row=current_row + i, column=1, value=term)
             term_cell.font = Font(size=9)
             term_cell.alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
-            term_cell.border = border
+            term_cell.border = dark_border
     
     # Add bank details
     for i, (label, value) in enumerate(bank_details):
         if current_row + i <= terms_start_row + 4:  # Limit to 4 rows for bank details
             bank_label = ws.cell(row=current_row + i, column=8, value=label)
             bank_label.font = Font(bold=True, size=10)
-            bank_label.border = border
+            bank_label.border = dark_border
             
             ws.merge_cells(f'I{current_row + i}:M{current_row + i}')
             bank_value = ws.cell(row=current_row + i, column=9, value=value)
-            bank_value.border = border
+            bank_value.border = dark_border
     
     # Add signature section at the bottom
     signature_row = terms_start_row + 11
@@ -431,8 +435,8 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     signature_cell.alignment = Alignment(horizontal='center')
     signature_cell.border = border
     
-    # Set column widths for better appearance
-    column_widths = [10, 15, 12, 12, 12, 8, 15, 12, 12, 12, 10, 10, 12]
+    # Set column widths for better appearance - Column A wider to match organization name
+    column_widths = [20, 15, 12, 12, 12, 8, 15, 12, 12, 12, 10, 10, 12]  # Column A increased from 10 to 20
     for i, width in enumerate(column_widths, 1):
         ws.column_dimensions[chr(64 + i)].width = width
     
