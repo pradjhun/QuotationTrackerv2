@@ -423,9 +423,9 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     separator_cell = ws.cell(row=current_row, column=7, value="")
     separator_cell.border = border
     
-    # Bank Details section (extended by one column)
+    # Bank Details section
     bank_start_row = current_row
-    ws.merge_cells(f'H{current_row}:N{current_row}')
+    ws.merge_cells(f'H{current_row}:M{current_row}')
     bank_header = ws.cell(row=current_row, column=8, value="Bank Details")
     bank_header.font = Font(bold=True, size=12)
     bank_header.alignment = Alignment(horizontal='center')
@@ -490,17 +490,17 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         separator_cell = ws.cell(row=row, column=7)
         separator_cell.border = border
     
-    # Bank Details content rows - extended to column N
+    # Bank Details content rows
     # Bank Name row
     bank_name_cell = ws.cell(row=current_row, column=8, value="Bank Name")
     bank_name_cell.font = Font(size=10)
     bank_name_cell.border = border
     
-    ws.merge_cells(f'I{current_row}:N{current_row}')
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     bank_name_value = ws.cell(row=current_row, column=9, value="kotak Bank")
     bank_name_value.border = border
     # Apply border to all merged cells
-    for col in range(9, 15):
+    for col in range(9, 14):
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -509,11 +509,11 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     ifsc_cell.font = Font(size=10)
     ifsc_cell.border = border
     
-    ws.merge_cells(f'I{current_row}:N{current_row}')
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     ifsc_value = ws.cell(row=current_row, column=9, value="")
     ifsc_value.border = border
     # Apply border to all merged cells
-    for col in range(9, 15):
+    for col in range(9, 14):
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -522,11 +522,11 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     account_cell.font = Font(size=10)
     account_cell.border = border
     
-    ws.merge_cells(f'I{current_row}:N{current_row}')
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     account_value = ws.cell(row=current_row, column=9, value="")
     account_value.border = border
     # Apply border to all merged cells
-    for col in range(9, 15):
+    for col in range(9, 14):
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -535,38 +535,36 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     address_cell.font = Font(size=10)
     address_cell.border = border
     
-    ws.merge_cells(f'I{current_row}:N{current_row}')
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     address_value = ws.cell(row=current_row, column=9, value="")
     address_value.border = border
     # Apply border to all merged cells
-    for col in range(9, 15):
+    for col in range(9, 14):
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
-    # Large Signature section - spanning to match Terms & Conditions height
-    signature_start_row = current_row
-    signature_rows_needed = len(terms_conditions) - 4  # Remaining rows to match terms height
+    # Calculate remaining rows needed to match Terms & Conditions height
+    bank_content_rows = 4  # We just added 4 rows above
+    terms_total_rows = len(terms_conditions)
+    remaining_rows_needed = terms_total_rows - bank_content_rows
     
-    # Merge signature label area vertically to match terms height
-    ws.merge_cells(f'H{current_row}:H{current_row + signature_rows_needed - 1}')
-    signature_cell = ws.cell(row=current_row, column=8, value="Signature")
-    signature_cell.font = Font(size=10)
-    signature_cell.alignment = Alignment(horizontal='center', vertical='center')
-    signature_cell.border = border
+    # Add empty rows below bank details to match Terms & Conditions height
+    for i in range(remaining_rows_needed):
+        # Empty label cell
+        empty_label = ws.cell(row=current_row, column=8, value="")
+        empty_label.border = border
+        
+        # Empty merged value area
+        ws.merge_cells(f'I{current_row}:M{current_row}')
+        empty_value = ws.cell(row=current_row, column=9, value="")
+        empty_value.border = border
+        # Apply border to all merged cells
+        for col in range(9, 14):
+            ws.cell(row=current_row, column=col).border = border
+        current_row += 1
     
-    # Merge signature value area to match terms height (extended to column N)
-    ws.merge_cells(f'I{current_row}:N{current_row + signature_rows_needed - 1}')
-    signature_value = ws.cell(row=current_row, column=9, value="")
-    signature_value.border = border
-    
-    # Apply borders to all cells in the signature area (extended to column N)
-    for sig_row in range(current_row, current_row + signature_rows_needed):
-        for sig_col in range(8, 15):
-            cell = ws.cell(row=sig_row, column=sig_col)
-            cell.border = border
-    
-    # Set column widths for better appearance - Extended to column N
-    column_widths = [20, 15, 12, 12, 12, 8, 15, 12, 12, 12, 10, 10, 12, 12]  # Added column N
+    # Set column widths for better appearance - Column A wider to match organization name
+    column_widths = [20, 15, 12, 12, 12, 8, 15, 12, 12, 12, 10, 10, 12]  # Column A increased from 10 to 20
     for i, width in enumerate(column_widths, 1):
         ws.column_dimensions[chr(64 + i)].width = width
     
