@@ -451,7 +451,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         ("Address", "")
     ]
     
-    # Add terms conditions with white background and gray line separators
+    # Add terms conditions with no borders between rows
     terms_end_row = current_row + len(terms_conditions) - 1
     
     for i, term in enumerate(terms_conditions):
@@ -462,30 +462,23 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
             term_cell.font = Font(size=9)
             term_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
             
-            # White background for all rows (no fill)
-            # Apply gray line borders to separate each line
+            # No borders between rows - only apply outer borders to the section
             for col in range(1, 7):  # Columns A to F
                 cell = ws.cell(row=current_row + i, column=col)
-                # Create gray line separator border
-                cell.border = Border(
-                    left=Side(style='thin', color='808080') if col == 1 else Side(style='thin', color='FFFFFF'),
-                    right=Side(style='thin', color='808080') if col == 6 else Side(style='thin', color='FFFFFF'),
-                    top=Side(style='thin', color='808080') if i == 0 else Side(style='thin', color='808080'),
-                    bottom=Side(style='thin', color='808080')
-                )
+                # No internal borders, only outer border for the entire section
+                cell.border = Border()
     
-    # Add thick black border around the entire Terms & Conditions section
+    # Add outer border around the entire Terms & Conditions section only
     for row in range(terms_start_row, terms_end_row + 2):  # Include header
         for col in range(1, 7):  # Columns A to F
             cell = ws.cell(row=row, column=col)
-            current_border = cell.border
             
-            # Apply thick black border to outer edges of the section (no bottom border)
+            # Apply outer border only to the edges of the section
             new_border = Border(
-                left=Side(style='thick', color='000000') if col == 1 else current_border.left,
-                right=Side(style='thick', color='000000') if col == 6 else current_border.right,
-                top=Side(style='thick', color='000000') if row == terms_start_row else current_border.top,
-                bottom=current_border.bottom  # Keep existing bottom border (no thick black line)
+                left=Side(style='thin', color='000000') if col == 1 else None,
+                right=Side(style='thin', color='000000') if col == 6 else None,
+                top=Side(style='thin', color='000000') if row == terms_start_row else None,
+                bottom=Side(style='thin', color='000000') if row == terms_end_row + 1 else None
             )
             cell.border = new_border
     
