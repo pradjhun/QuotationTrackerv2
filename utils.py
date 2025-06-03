@@ -235,11 +235,18 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     quot_id_cell = ws.cell(row=current_row, column=8, value="Quotation ID:")
     quot_id_cell.font = Font(bold=True, size=10)
     quot_id_cell.border = border
+    
+    # Merge cells I to M for quotation ID value and align left
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     quot_value_cell = ws.cell(row=current_row, column=9, value=quotation_id or "")
     quot_value_cell.border = border
+    quot_value_cell.alignment = Alignment(horizontal='left')
+    # Apply borders to merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     
     # Fill remaining cells with borders
-    for col in [7, 10, 11, 12, 13]:
+    for col in [7]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -260,11 +267,18 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     sales_cell = ws.cell(row=current_row, column=8, value="Sales Person:")
     sales_cell.font = Font(bold=True, size=10)
     sales_cell.border = border
+    
+    # Merge cells I to M for sales person value and align left
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     sales_value_cell = ws.cell(row=current_row, column=9, value=sales_person or "")
     sales_value_cell.border = border
+    sales_value_cell.alignment = Alignment(horizontal='left')
+    # Apply borders to merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     
     # Fill remaining cells with borders
-    for col in [7, 10, 11, 12, 13]:
+    for col in [7]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
@@ -285,11 +299,18 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     contact_cell = ws.cell(row=current_row, column=8, value="Sales Contact:")
     contact_cell.font = Font(bold=True, size=10)
     contact_cell.border = border
+    
+    # Merge cells I to M for sales contact value and align left
+    ws.merge_cells(f'I{current_row}:M{current_row}')
     contact_value_cell = ws.cell(row=current_row, column=9, value=sales_contact or "")
     contact_value_cell.border = border
+    contact_value_cell.alignment = Alignment(horizontal='left')
+    # Apply borders to merged cells
+    for col in range(9, 14):
+        ws.cell(row=current_row, column=col).border = border
     
     # Fill remaining cells with borders
-    for col in [7, 10, 11, 12, 13]:
+    for col in [7]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
