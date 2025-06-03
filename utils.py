@@ -437,12 +437,12 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
             cell = ws.cell(row=row, column=col)
             current_border = cell.border
             
-            # Apply thick black border to outer edges of the section
+            # Apply thick black border to outer edges of the section (no bottom border)
             new_border = Border(
                 left=Side(style='thick', color='000000') if col == 1 else current_border.left,
                 right=Side(style='thick', color='000000') if col == 6 else current_border.right,
                 top=Side(style='thick', color='000000') if row == terms_start_row else current_border.top,
-                bottom=Side(style='thick', color='000000') if row == terms_end_row + 1 else current_border.bottom
+                bottom=current_border.bottom  # Keep existing bottom border (no thick black line)
             )
             cell.border = new_border
     
