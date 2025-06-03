@@ -164,73 +164,106 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     
     # Left section headers and Power Udyog section
     # Organization Name
-    ws.cell(row=current_row, column=1, value="Organization Name:").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=1).border = border
+    org_name_cell = ws.cell(row=current_row, column=1, value="Organization Name:")
+    org_name_cell.font = Font(bold=True, size=10)
+    org_name_cell.border = border
     ws.merge_cells(f'B{current_row}:F{current_row}')
-    ws.cell(row=current_row, column=2, value=customer_name or "").border = border
+    org_value_cell = ws.cell(row=current_row, column=2, value=customer_name or "")
+    org_value_cell.border = border
+    # Apply borders to merged cells
+    for col in range(2, 7):
+        ws.cell(row=current_row, column=col).border = border
+    # Empty column G
+    ws.cell(row=current_row, column=7).border = border
     
-    # Power Udyog branding (right side)
-    ws.merge_cells(f'H{current_row}:M{current_row}')
-    power_udyog_cell = ws.cell(row=current_row, column=8, value="Power Udyog")
-    power_udyog_cell.font = Font(bold=True, size=20, color="1F4E79")
-    power_udyog_cell.alignment = Alignment(horizontal='center', vertical='center')
-    power_udyog_cell.border = border
+    # Store the row numbers for Power Udyog merging
+    power_udyog_start_row = current_row
+    
+    # Apply borders to Power Udyog area for row 1
+    for col in range(8, 14):
+        ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
     # Address
-    ws.cell(row=current_row, column=1, value="Address:").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=1).border = border
+    addr_label_cell = ws.cell(row=current_row, column=1, value="Address:")
+    addr_label_cell.font = Font(bold=True, size=10)
+    addr_label_cell.border = border
     ws.merge_cells(f'B{current_row}:F{current_row}')
     addr_cell = ws.cell(row=current_row, column=2, value=customer_address or "")
     addr_cell.border = border
     addr_cell.alignment = Alignment(wrap_text=True, vertical='top')
     ws.row_dimensions[current_row].height = 30
+    # Apply borders to merged cells
+    for col in range(2, 7):
+        ws.cell(row=current_row, column=col).border = border
+    # Empty column G
+    ws.cell(row=current_row, column=7).border = border
     
-    # Empty right side cells with borders
+    # Apply borders to Power Udyog area for row 2
     for col in range(8, 14):
         ws.cell(row=current_row, column=col).border = border
+    
+    # Now merge Power Udyog across both rows (vertically and horizontally)
+    ws.merge_cells(f'H{power_udyog_start_row}:M{current_row}')
+    power_udyog_cell = ws.cell(row=power_udyog_start_row, column=8, value="Power Udyog")
+    power_udyog_cell.font = Font(bold=True, size=20, color="1F4E79")
+    power_udyog_cell.alignment = Alignment(horizontal='center', vertical='center')
+    power_udyog_cell.border = border
+    
     current_row += 1
     
     # Date
-    ws.cell(row=current_row, column=1, value="Date:").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=1).border = border
-    ws.cell(row=current_row, column=2, value=quotation_date or "").border = border
+    date_cell = ws.cell(row=current_row, column=1, value="Date:")
+    date_cell.font = Font(bold=True, size=10)
+    date_cell.border = border
+    date_value_cell = ws.cell(row=current_row, column=2, value=quotation_date or "")
+    date_value_cell.border = border
     
     # Quotation ID (right side)
-    ws.cell(row=current_row, column=8, value="Quotation ID:").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=8).border = border
-    ws.cell(row=current_row, column=9, value=quotation_id or "").border = border
+    quot_id_cell = ws.cell(row=current_row, column=8, value="Quotation ID:")
+    quot_id_cell.font = Font(bold=True, size=10)
+    quot_id_cell.border = border
+    quot_value_cell = ws.cell(row=current_row, column=9, value=quotation_id or "")
+    quot_value_cell.border = border
     
     # Fill remaining cells with borders
-    for col in [3, 4, 5, 6, 10, 11, 12, 13]:
+    for col in [3, 4, 5, 6, 7, 10, 11, 12, 13]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
     # PAN No and Sales Person
-    ws.cell(row=current_row, column=1, value="PAN No").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=1).border = border
-    ws.cell(row=current_row, column=2, value="").border = border
+    pan_cell = ws.cell(row=current_row, column=1, value="PAN No")
+    pan_cell.font = Font(bold=True, size=10)
+    pan_cell.border = border
+    pan_value_cell = ws.cell(row=current_row, column=2, value="")
+    pan_value_cell.border = border
     
-    ws.cell(row=current_row, column=8, value="Sales Person:").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=8).border = border
-    ws.cell(row=current_row, column=9, value=sales_person or "").border = border
+    sales_cell = ws.cell(row=current_row, column=8, value="Sales Person:")
+    sales_cell.font = Font(bold=True, size=10)
+    sales_cell.border = border
+    sales_value_cell = ws.cell(row=current_row, column=9, value=sales_person or "")
+    sales_value_cell.border = border
     
     # Fill remaining cells with borders
-    for col in [3, 4, 5, 6, 10, 11, 12, 13]:
+    for col in [3, 4, 5, 6, 7, 10, 11, 12, 13]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
     # GSTN No and Sales Contact
-    ws.cell(row=current_row, column=1, value="GSTN No").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=1).border = border
-    ws.cell(row=current_row, column=2, value="").border = border
+    gstn_cell = ws.cell(row=current_row, column=1, value="GSTN No")
+    gstn_cell.font = Font(bold=True, size=10)
+    gstn_cell.border = border
+    gstn_value_cell = ws.cell(row=current_row, column=2, value="")
+    gstn_value_cell.border = border
     
-    ws.cell(row=current_row, column=8, value="Sales Contact:").font = Font(bold=True, size=10)
-    ws.cell(row=current_row, column=8).border = border
-    ws.cell(row=current_row, column=9, value=sales_contact or "").border = border
+    contact_cell = ws.cell(row=current_row, column=8, value="Sales Contact:")
+    contact_cell.font = Font(bold=True, size=10)
+    contact_cell.border = border
+    contact_value_cell = ws.cell(row=current_row, column=9, value=sales_contact or "")
+    contact_value_cell.border = border
     
     # Fill remaining cells with borders
-    for col in [3, 4, 5, 6, 10, 11, 12, 13]:
+    for col in [3, 4, 5, 6, 7, 10, 11, 12, 13]:
         ws.cell(row=current_row, column=col).border = border
     current_row += 1
     
