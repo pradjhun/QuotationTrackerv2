@@ -341,6 +341,7 @@ def admin_panel():
                         backup_data['users'] = safe_users
                     
                     # Backup uploaded images
+                    import os
                     backup_data['files'] = {}
                     if os.path.exists('uploaded_images'):
                         for filename in os.listdir('uploaded_images'):
@@ -388,7 +389,6 @@ def admin_panel():
             st.write("• User accounts and permissions")
             st.write("• Uploaded product images")
             st.write("• Database files")
-            st.write("• System settings")
         
         st.divider()
         
@@ -492,6 +492,7 @@ def admin_panel():
                                 # Restore files (images and databases)
                                 if restore_files and 'files' in backup_content:
                                     # Create directories if they don't exist
+                                    import os
                                     os.makedirs('uploaded_images', exist_ok=True)
                                     
                                     for filename, file_data in backup_content['files'].items():
