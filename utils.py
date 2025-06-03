@@ -148,6 +148,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     
     # Define styles
     header_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+    gray_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     dark_border = Border(left=Side(style='thick'), right=Side(style='thick'), top=Side(style='thick'), bottom=Side(style='thick'))
     
@@ -374,7 +375,7 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
     terms_header.font = Font(bold=True, size=12)
     terms_header.alignment = Alignment(horizontal='center')
     terms_header.fill = header_fill
-    terms_header.border = dark_border
+    terms_header.border = border
     
     # Bank Details section
     ws.merge_cells(f'H{current_row}:M{current_row}')
@@ -407,14 +408,26 @@ def export_to_excel(df: pd.DataFrame, filename: str = None, customer_name: str =
         ("Address", "")
     ]
     
-    # Add terms conditions
+    # Add terms conditions with alternating row colors
     for i, term in enumerate(terms_conditions):
         if current_row + i <= terms_start_row + 10:  # Limit to available space
+            # Merge cells A to F for each term
             ws.merge_cells(f'A{current_row + i}:F{current_row + i}')
             term_cell = ws.cell(row=current_row + i, column=1, value=term)
             term_cell.font = Font(size=9)
-            term_cell.alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
-            term_cell.border = dark_border
+            term_cell.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+            
+            # Apply alternating row colors - gray for even rows, white for odd rows
+            if i % 2 == 0:  # Even rows (0, 2, 4...) get gray background
+                term_cell.fill = gray_fill
+            # Odd rows get no fill (white background by default)
+            
+            # Apply border to all cells in the merged range
+            for col in range(1, 7):  # Columns A to F
+                cell = ws.cell(row=current_row + i, column=col)
+                cell.border = border
+                if i % 2 == 0:  # Apply gray fill to all cells in the merged range
+                    cell.fill = gray_fill
     
     # Add bank details
     for i, (label, value) in enumerate(bank_details):
