@@ -4,6 +4,8 @@ import os
 import json
 import shutil
 import sqlite3
+import base64
+import zipfile
 from io import BytesIO
 from datetime import datetime
 from database_manager import DatabaseManager
@@ -338,6 +340,30 @@ def admin_panel():
                             safe_users.append(safe_user)
                         backup_data['users'] = safe_users
                     
+                    # Backup uploaded images
+                    backup_data['files'] = {}
+                    if os.path.exists('uploaded_images'):
+                        for filename in os.listdir('uploaded_images'):
+                            file_path = os.path.join('uploaded_images', filename)
+                            if os.path.isfile(file_path):
+                                with open(file_path, 'rb') as f:
+                                    file_content = base64.b64encode(f.read()).decode('utf-8')
+                                    backup_data['files'][filename] = {
+                                        'content': file_content,
+                                        'type': 'image'
+                                    }
+                    
+                    # Backup database files
+                    db_files = ['quotation_database.db', 'users.db']
+                    for db_file in db_files:
+                        if os.path.exists(db_file):
+                            with open(db_file, 'rb') as f:
+                                file_content = base64.b64encode(f.read()).decode('utf-8')
+                                backup_data['files'][db_file] = {
+                                    'content': file_content,
+                                    'type': 'database'
+                                }
+                    
                     backup_data = json.dumps(backup_data, indent=2, default=str)
                     
                     if backup_data:
@@ -360,6 +386,8 @@ def admin_panel():
             st.write("• All inventory/product data")
             st.write("• All quotation records")
             st.write("• User accounts and permissions")
+            st.write("• Uploaded product images")
+            st.write("• Database files")
             st.write("• System settings")
         
         st.divider()
@@ -392,6 +420,8 @@ def admin_panel():
                         st.write(f"• {len(backup_content['quotations'])} quotations")
                     if 'users' in backup_content:
                         st.write(f"• {len(backup_content['users'])} user accounts")
+                    if 'files' in backup_content:
+                        st.write(f"• {len(backup_content['files'])} files (images & databases)")
                     if 'metadata' in backup_content:
                         st.write(f"• Created: {backup_content['metadata'].get('created_at', 'Unknown')}")
                 except Exception as e:
@@ -403,6 +433,7 @@ def admin_panel():
                     st.write("**Restore options:**")
                     restore_products = st.checkbox("Restore inventory/products", value=True)
                     restore_quotations = st.checkbox("Restore quotations", value=True)
+                    restore_files = st.checkbox("Restore files (images & databases)", value=True)
                     restore_users = st.checkbox("Restore user accounts", value=False)
                     
                     st.write("---")
@@ -457,6 +488,28 @@ def admin_panel():
                                                 sales_contact=quotation.get('sales_contact', ''),
                                                 created_by=quotation.get('created_by', '')
                                             )
+                                
+                                # Restore files (images and databases)
+                                if restore_files and 'files' in backup_content:
+                                    # Create directories if they don't exist
+                                    os.makedirs('uploaded_images', exist_ok=True)
+                                    
+                                    for filename, file_data in backup_content['files'].items():
+                                        try:
+                                            # Decode base64 content
+                                            file_content = base64.b64decode(file_data['content'])
+                                            
+                                            if file_data['type'] == 'image':
+                                                # Restore to uploaded_images directory
+                                                file_path = os.path.join('uploaded_images', filename)
+                                                with open(file_path, 'wb') as f:
+                                                    f.write(file_content)
+                                            elif file_data['type'] == 'database':
+                                                # Restore database files
+                                                with open(filename, 'wb') as f:
+                                                    f.write(file_content)
+                                        except Exception as e:
+                                            st.warning(f"Could not restore file {filename}: {str(e)}")
                                 
                                 # Restore users (optional, with warning)
                                 if restore_users and 'users' in backup_content:
